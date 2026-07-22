@@ -1,0 +1,16 @@
+# Build output
+dist/
+dist-ssr/
+
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+
+# Editor
+.vscode/
+*.local
+
+# Logs
+npm-debug.log*

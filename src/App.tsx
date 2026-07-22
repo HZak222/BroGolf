@@ -25,7 +25,7 @@ export default function App() {
   useEffect(() => {
     const active = state.rounds.find((r) => !r.completed);
     if (active) setActiveRoundId(active.id);
-  }, []);
+  }, [state.rounds]);
 
   // Save to localStorage whenever state changes
   useEffect(() => {

@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Skorkort</title>
+<style>
+  :root{
+    --green-dark:#173622;
+    --green:#1F4D34;
+    --green-mid:#2E6B47;
+    --lawn:#4C9A5B;
+    --lawn-bright:#63B56F;
+    --paper:#F7F3E8;
+    --paper-line:#E4DBC4;
+    --ink:#1B1B18;
+    --ink-soft:#5B5B52;
+    --flag:#C1442D;
+    --flag-dark:#9C3320;
+    --gold:#D9A441;
+    --shadow: 0 6px 16px rgba(0,0,0,.18);
+    --radius: 18px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none;}
+  html,body{height:100%; margin:0;}
+  body{
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--green-dark);
+    color:var(--ink);
+    overscroll-behavior:none;
+    min-height:100vh;
+    min-height:100dvh;
+  }
+  #app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    min-height:100dvh;
+    background:var(--paper);
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  .screen{display:none; flex-direction:column; flex:1; min-height:0;}
+  .screen.active{display:flex;}
+
+  /* ---------- Setup screen ---------- */
+  .setup-header{
+    background:var(--green);
+    color:var(--paper);
+    padding: max(18px, env(safe-area-inset-top)) 20px 20px;
+    text-align:center;
+  }
+  .setup-header .logo{
+    font-size:13px; letter-spacing:3px; text-transform:uppercase; opacity:.75; margin-bottom:6px; font-weight:700;
+  }
+  .setup-header h1{ margin:0; font-size:28px; font-weight:800; letter-spacing:.5px;}
+  .setup-body{ padding:20px; flex:1; overflow-y:auto; }
+  .section-label{
+    font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px;
+    color:var(--green); margin: 22px 0 10px; display:flex; align-items:center; gap:8px;
+  }
+  .section-label:first-child{margin-top:0;}
+  .section-label .num{
+    background:var(--green); color:var(--paper); width:20px; height:20px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center; font-size:11px;
+  }
+  .pill-row{ display:flex; gap:10px; }
+  .pill-btn{
+    flex:1; padding:16px 8px; border-radius:14px; border:2px solid var(--paper-line);
+    background:#fff; font-size:17px; font-weight:800; color:var(--ink); cursor:pointer;
+  }
+  .pill-btn.selected{ background:var(--green); border-color:var(--green); color:var(--paper); }
+  .count-row{ display:flex; gap:10px; }
+  .count-btn{
+    flex:1; aspect-ratio:1; border-radius:14px; border:2px solid var(--paper-line);
+    background:#fff; font-size:22px; font-weight:800; color:var(--ink); cursor:pointer;
+  }
+  .count-btn.selected{ background:var(--lawn); border-color:var(--lawn); color:#fff; }
+
+  .chip-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .chip{
+    padding:14px 10px; border-radius:14px; border:2px solid var(--paper-line);
+    background:#fff; font-size:15px; font-weight:700; color:var(--ink); text-align:left; cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .chip .star{ color:var(--gold); font-size:16px; }
+  .chip.selected{ background:var(--lawn); border-color:var(--lawn); color:#fff; }
+  .chip.selected .star{ color:#fff; }
+  .subtle-list{ display:flex; flex-direction:column; gap:8px; margin-top:8px;}
+  .subtle-chip{
+    padding:12px 14px; border-radius:12px; border:1px solid var(--paper-line);
+    background:#fff; font-size:14px; font-weight:600; color:var(--ink-soft); cursor:pointer;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .subtle-chip.selected{ background:var(--green); border-color:var(--green); color:var(--paper); }
+  .add-new-btn{
+    margin-top:8px; padding:12px; border-radius:12px; border:2px dashed var(--paper-line);
+    background:transparent; color:var(--ink-soft); font-weight:700; font-size:14px; text-align:center; cursor:pointer;
+  }
+  .player-slot-picker{ display:flex; flex-direction:column; gap:14px; }
+  .slot-block{ background:#fff; border-radius:14px; padding:12px 14px; border:2px solid var(--paper-line); }
+  .slot-block .slot-title{ font-size:13px; font-weight:800; color:var(--green); margin-bottom:8px; }
+
+  .setup-footer{ padding:16px 20px max(16px, env(safe-area-inset-bottom)); }
+  .confirm-btn{
+    width:100%; padding:18px; border:none; border-radius:16px; background:var(--flag); color:#fff;
+    font-size:18px; font-weight:800; letter-spacing:.3px; cursor:pointer; box-shadow:var(--shadow);
+  }
+  .confirm-btn:disabled{ background:#B9B29A; box-shadow:none; }
+
+  /* ---------- Scorecard screen ---------- */
+  .bar{
+    width:100%; background:var(--green); color:var(--paper);
+    padding:14px 18px; text-align:center; flex-shrink:0;
+  }
+  .bar-top{ padding-top:max(14px, env(safe-area-inset-top)); }
+  .bar-top .course{ font-size:19px; font-weight:800; }
+  .bar-top .date{ font-size:12px; opacity:.75; font-weight:600; letter-spacing:.5px; margin-top:2px;}
+  .players-bar{
+    display:grid; background:var(--green-mid); color:var(--paper);
+  }
+  .players-bar .pcell{
+    padding:10px 4px; text-align:center; border-right:1px solid rgba(255,255,255,.15);
+    font-size:13px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .players-bar .pcell:last-child{ border-right:none; }
+  .players-bar .pcell .role{ display:block; font-size:10px; opacity:.7; font-weight:700; letter-spacing:1px; }
+
+  .holes-grid{
+    flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr 1fr;
+    gap:2px; padding:2px; background:var(--paper-line);
+  }
+  .hole-cell{
+    background:var(--paper); display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; position:relative; min-height:0;
+  }
+  .hole-cell .hnum{ font-size:13px; font-weight:700; color:var(--ink-soft); position:absolute; top:8px; left:10px; }
+  .hole-cell .hscore{ font-size:38px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .hole-cell .hdash{ font-size:30px; font-weight:300; color:#C9C1A8; }
+  .hole-cell.done{ background:#fff; }
+  .hole-cell.done .hscore{ color:var(--green); }
+  .hole-cell:active{ background:var(--paper-line); }
+
+  .scorecard-footer{
+    display:flex; gap:2px; flex-shrink:0; padding:2px;
+    padding-bottom:max(2px, env(safe-area-inset-bottom));
+    background:var(--paper-line);
+  }
+  .foot-btn{
+    flex:1; padding:16px 4px; border:none; font-size:14px; font-weight:800; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+  }
+  .foot-btn .sub{ font-size:10px; font-weight:600; opacity:.8; }
+  .foot-vista{ background:var(--lawn); color:#fff; }
+  .foot-haetta{ background:var(--flag); color:#fff; }
+  .foot-next{ background:var(--green); color:var(--paper); }
+  .foot-btn:disabled{ opacity:.4; }
+
+  /* ---------- Hole entry modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:50;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.active{ display:flex; }
+  .hole-modal{
+    background:var(--paper); width:100%; max-width:520px; border-radius:22px 22px 0 0;
+    display:flex; flex-direction:column; max-height:92vh; box-shadow:0 -8px 30px rgba(0,0,0,.35);
+  }
+  .hole-modal-head{
+    background:var(--green); color:var(--paper); padding:16px 18px; display:flex; align-items:center; justify-content:space-between;
+    border-radius:22px 22px 0 0;
+  }
+  .hole-modal-head .htitle{ font-size:20px; font-weight:800; }
+  .hole-nav{ display:flex; gap:8px; }
+  .nav-btn{
+    width:38px; height:38px; border-radius:10px; border:none; background:rgba(255,255,255,.15);
+    color:var(--paper); font-size:18px; font-weight:800; cursor:pointer;
+  }
+  .nav-btn:disabled{ opacity:.3; }
+  .close-x{
+    width:38px; height:38px; border-radius:10px; border:none; background:rgba(255,255,255,.15);
+    color:var(--paper); font-size:18px; cursor:pointer;
+  }
+  .players-columns{
+    flex:1; display:flex; overflow-x:auto; overflow-y:auto; padding:14px 10px 20px;
+    gap:10px;
+  }
+  .player-col{
+    flex:1; min-width:0; background:#fff; border-radius:16px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:10px;
+    border:2px solid var(--paper-line);
+  }
+  .player-col .pname{ font-size:13px; font-weight:800; color:var(--ink-soft); text-align:center; height:32px; display:flex; align-items:center; }
+  .player-col .ptotal{ font-size:44px; font-weight:800; color:var(--green); font-variant-numeric:tabular-nums; line-height:1; }
+  .player-col .putt-count{ font-size:11px; font-weight:700; color:var(--ink-soft); }
+  .big-plus{
+    width:100%; aspect-ratio:1; max-height:88px; border-radius:16px; border:none; background:var(--lawn);
+    color:#fff; font-size:38px; font-weight:800; cursor:pointer; box-shadow:var(--shadow);
+  }
+  .big-plus:active{ background:var(--lawn-bright); }
+  .action-btn{
+    width:100%; padding:12px 4px; border-radius:12px; border:none; font-size:13px; font-weight:800; cursor:pointer;
+  }
+  .btn-vidi{ background:var(--flag); color:#fff; }
+  .btn-putt{ background:var(--gold); color:#3a2a06; }
+  .undo-btn{
+    width:100%; padding:8px 4px; border-radius:10px; border:2px solid var(--paper-line); background:transparent;
+    color:var(--ink-soft); font-size:12px; font-weight:700; cursor:pointer; margin-top:2px;
+  }
+
+  /* ---------- Confirm quit popup ---------- */
+  .confirm-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:60;
+    display:none; align-items:center; justify-content:center; padding:24px;
+  }
+  .confirm-overlay.active{ display:flex; }
+  .confirm-box{
+    background:var(--paper); border-radius:18px; padding:24px 22px; max-width:380px; width:100%;
+    box-shadow:var(--shadow); text-align:center;
+  }
+  .confirm-box p{ font-size:16px; font-weight:700; color:var(--ink); margin:0 0 20px; line-height:1.4; }
+  .confirm-btns{ display:flex; gap:10px; }
+  .confirm-btns button{ flex:1; padding:14px; border-radius:12px; border:none; font-size:15px; font-weight:800; cursor:pointer; }
+  .cbtn-no{ background:#E5E0CF; color:var(--ink); }
+  .cbtn-yes{ background:var(--flag); color:#fff; }
+
+  /* ---------- Summary screen ---------- */
+  .summary-body{ flex:1; padding:24px 20px; overflow-y:auto; }
+  .summary-header{ text-align:center; margin-bottom:22px; }
+  .summary-header .big-total{ font-size:64px; font-weight:800; color:var(--green); line-height:1; font-variant-numeric:tabular-nums; }
+  .summary-header .lbl{ font-size:13px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink-soft); margin-top:6px; }
+  .summary-table{ width:100%; border-collapse:collapse; margin-top:10px; }
+  .summary-table th{ font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft); padding:6px 4px; border-bottom:2px solid var(--paper-line); }
+  .summary-table td{ font-size:15px; font-weight:700; text-align:center; padding:8px 4px; border-bottom:1px solid var(--paper-line); font-variant-numeric:tabular-nums; }
+  .summary-table td:first-child, .summary-table th:first-child{ text-align:left; font-weight:800; color:var(--green); }
+  .summary-footer{ padding:16px 20px max(16px, env(safe-area-inset-bottom)); display:flex; gap:10px; }
+  .summary-footer button{ flex:1; padding:16px; border-radius:14px; border:none; font-size:15px; font-weight:800; cursor:pointer; }
+  .sbtn-new{ background:var(--green); color:var(--paper); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ========== SETUP SCREEN ========== -->
+  <div class="screen active" id="screen-setup">
+    <div class="setup-header">
+      <div class="logo">Golfhringur</div>
+      <h1>Byrja hring</h1>
+    </div>
+    <div class="setup-body">
+
+      <div class="section-label"><span class="num">1</span> Hver er að spila</div>
+      <div class="pill-row">
+        <button class="pill-btn" data-role="BA" onclick="selectRole('BA')">BA</button>
+        <button class="pill-btn" data-role="JBA" onclick="selectRole('JBA')">JBA</button>
+      </div>
+
+      <div class="section-label"><span class="num">2</span> Fjöldi meðspilara</div>
+      <div class="count-row">
+        <button class="count-btn" data-count="0" onclick="selectCount(0)">0</button>
+        <button class="count-btn" data-count="1" onclick="selectCount(1)">1</button>
+        <button class="count-btn" data-count="2" onclick="selectCount(2)">2</button>
+        <button class="count-btn" data-count="3" onclick="selectCount(3)">3</button>
+      </div>
+
+      <div id="mate-slots" style="display:none;">
+        <div class="section-label"><span class="num">3</span> Meðspilarar</div>
+        <div class="player-slot-picker" id="slot-container"></div>
+      </div>
+
+      <div class="section-label"><span class="num" id="course-step-num">3</span> Völlur</div>
+      <div class="chip-grid" id="fav-courses"></div>
+      <div class="subtle-list" id="recent-courses"></div>
+      <div class="add-new-btn" onclick="addNewCourse()">+ Bæta við velli</div>
+
+    </div>
+    <div class="setup-footer">
+      <button class="confirm-btn" id="confirm-setup-btn" disabled onclick="confirmSetup()">Staðfesta</button>
+    </div>
+  </div>
+
+  <!-- ========== SCORECARD SCREEN ========== -->
+  <div class="screen" id="screen-scorecard">
+    <div class="bar bar-top">
+      <div class="course" id="sc-course">—</div>
+      <div class="date" id="sc-date">—</div>
+    </div>
+    <div class="players-bar" id="sc-players"></div>
+    <div class="holes-grid" id="holes-grid"></div>
+    <div class="scorecard-footer">
+      <button class="foot-btn foot-vista" onclick="saveRound()">Vista<span class="sub">skor</span></button>
+      <button class="foot-btn foot-haetta" onclick="askQuit()">Hætta</button>
+      <button class="foot-btn foot-next" id="next9btn" onclick="nextNine()">Næstu 9<span class="sub">holur</span></button>
+    </div>
+  </div>
+
+  <!-- ========== SUMMARY SCREEN ========== -->
+  <div class="screen" id="screen-summary">
+    <div class="bar bar-top">
+      <div class="course">Samtals skor</div>
+      <div class="date" id="sum-course-date">—</div>
+    </div>
+    <div class="summary-body">
+      <div class="summary-header">
+        <div class="big-total" id="sum-total">0</div>
+        <div class="lbl">Högg samtals</div>
+      </div>
+      <table class="summary-table" id="summary-table"></table>
+    </div>
+    <div class="summary-footer">
+      <button class="sbtn-new" onclick="restartApp()">Nýr hringur</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== HOLE ENTRY MODAL ========== -->
+<div class="modal-overlay" id="hole-modal-overlay">
+  <div class="hole-modal">
+    <div class="hole-modal-head">
+      <button class="nav-btn" id="hole-prev" onclick="gotoHole(-1)">‹</button>
+      <div class="htitle">Hola <span id="modal-hole-num">1</span></div>
+      <div style="display:flex; gap:8px;">
+        <button class="nav-btn" id="hole-next" onclick="gotoHole(1)">›</button>
+        <button class="close-x" onclick="closeHoleModal()">✕</button>
+      </div>
+    </div>
+    <div class="players-columns" id="modal-players"></div>
+  </div>
+</div>
+
+<!-- ========== CONFIRM QUIT POPUP ========== -->
+<div class="confirm-overlay" id="quit-confirm-overlay">
+  <div class="confirm-box">
+    <p>Ertu alveg viss um að þú viljir hætta?</p>
+    <div class="confirm-btns">
+      <button class="cbtn-no" onclick="cancelQuit()">Hætta við</button>
+      <button class="cbtn-yes" onclick="confirmQuit()">Já, hætta</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   MOCK GAGNASETT — skiptist út fyrir Firebase í næstu umferð
+   ============================================================ */
+const FAV_COURSES = ["Kiðjaberg", "Grafarholt", "Korpúlfsstaðir", "Vestmannaeyjar"];
+const RECENT_COURSES = ["Leirdalur", "Setbergsvöllur", "Hlíðavöllur", "Úlfarsfell"];
+const RECENT_PLAYERS = ["Siggi", "Nonni", "Gulli", "Kári", "Óli", "Denni"];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let state = {
+  role: null,          // "BA" eða "JBA"
+  mateCount: 0,        // 0-3
+  mates: [],           // valdir meðspilarar (nöfn)
+  course: null,
+  date: null,
+  players: [],         // [{label, name}]  label = "BA"/"JBA"/nafn
+  holes: [],           // [{[playerIdx]: {strokes, putts}}] lengd 18 (1-9 fyrri, 10-18 seinni)
+  currentNine: 0,       // 0 = holur 1-9, 1 = holur 10-18
+  activeHole: 1
+};
+
+/* ---------------- SETUP SCREEN LOGIC ---------------- */
+function selectRole(role){
+  state.role = role;
+  document.querySelectorAll('[data-role]').forEach(b=>b.classList.toggle('selected', b.dataset.role===role));
+  checkSetupReady();
+}
+function selectCount(n){
+  state.mateCount = n;
+  state.mates = new Array(n).fill(null);
+  document.querySelectorAll('[data-count]').forEach(b=>b.classList.toggle('selected', +b.dataset.count===n));
+  renderMateSlots();
+  document.getElementById('mate-slots').style.display = n>0 ? 'block' : 'none';
+  document.getElementById('course-step-num').textContent = n>0 ? '4' : '3';
+  checkSetupReady();
+}
+function renderMateSlots(){
+  const c = document.getElementById('slot-container');
+  c.innerHTML = '';
+  for(let i=0;i<state.mateCount;i++){
+    const block = document.createElement('div');
+    block.className = 'slot-block';
+    block.innerHTML = `<div class="slot-title">Meðspilari ${i+1}</div>
+      <div class="subtle-list" id="mate-list-${i}"></div>`;
+    c.appendChild(block);
+    const list = block.querySelector(`#mate-list-${i}`);
+    RECENT_PLAYERS.forEach(name=>{
+      const chip = document.createElement('div');
+      chip.className = 'subtle-chip';
+      chip.textContent = name;
+      chip.onclick = ()=>{
+        state.mates[i] = name;
+        list.querySelectorAll('.subtle-chip').forEach(el=>el.classList.remove('selected'));
+        chip.classList.add('selected');
+        checkSetupReady();
+      };
+      list.appendChild(chip);
+    });
+  }
+}
+function renderCourses(){
+  const favWrap = document.getElementById('fav-courses');
+  favWrap.innerHTML = '';
+  FAV_COURSES.forEach(name=>{
+    const el = document.createElement('div');
+    el.className = 'chip';
+    el.innerHTML = `<span>${name}</span><span class="star">★</span>`;
+    el.onclick = ()=>selectCourse(name, el);
+    favWrap.appendChild(el);
+  });
+  const recWrap = document.getElementById('recent-courses');
+  recWrap.innerHTML = '';
+  RECENT_COURSES.forEach(name=>{
+    const el = document.createElement('div');
+    el.className = 'subtle-chip';
+    el.textContent = name;
+    el.onclick = ()=>selectCourse(name, el);
+    recWrap.appendChild(el);
+  });
+}
+function selectCourse(name, el){
+  state.course = name;
+  document.querySelectorAll('.chip, .subtle-chip').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  checkSetupReady();
+}
+function addNewCourse(){
+  const name = prompt('Nafn á nýjum velli:');
+  if(name && name.trim()){
+    FAV_COURSES.unshift(name.trim());
+    renderCourses();
+  }
+}
+function checkSetupReady(){
+  let ready = !!state.role && !!state.course;
+  if(state.mateCount>0){
+    ready = ready && state.mates.filter(Boolean).length === state.mateCount;
+  }
+  document.getElementById('confirm-setup-btn').disabled = !ready;
+}
+function confirmSetup(){
+  state.players = [{label: state.role, name: state.role}];
+  state.mates.forEach((m,i)=> state.players.push({label:`Meðsp. ${i+1}`, name:m}));
+  state.holes = new Array(18).fill(null).map(()=> state.players.map(()=>({strokes:0, putts:0})));
+  state.date = new Date().toLocaleDateString('is-IS', {day:'numeric', month:'long', year:'numeric'});
+  state.currentNine = 0;
+  showScreen('screen-scorecard');
+  renderScorecard();
+}
+
+/* ---------------- SCORECARD SCREEN ---------------- */
+function renderScorecard(){
+  document.getElementById('sc-course').textContent = state.course;
+  document.getElementById('sc-date').textContent = state.date;
+
+  const pbar = document.getElementById('sc-players');
+  pbar.style.gridTemplateColumns = `repeat(${state.players.length}, 1fr)`;
+  pbar.innerHTML = state.players.map(p=>`<div class="pcell"><span class="role">${p.label}</span>${p.name||p.label}</div>`).join('');
+
+  const grid = document.getElementById('holes-grid');
+  grid.innerHTML = '';
+  const offset = state.currentNine*9;
+  for(let i=1;i<=9;i++){
+    const holeIdx = offset + i - 1;
+    const holeData = state.holes[holeIdx];
+    const total = holeData.reduce((s,p)=>s+p.strokes,0);
+    const done = total>0;
+    const cell = document.createElement('div');
+    cell.className = 'hole-cell' + (done?' done':'');
+    cell.innerHTML = `<span class="hnum">${offset+i}</span>${done? `<span class="hscore">${total}</span>` : `<span class="hdash">–</span>`}`;
+    cell.onclick = ()=> openHoleModal(holeIdx);
+    grid.appendChild(cell);
+  }
+  document.getElementById('next9btn').disabled = state.currentNine===1;
+}
+function nextNine(){
+  state.currentNine = 1;
+  renderScorecard();
+}
+function saveRound(){
+  // TODO: senda state.holes í Firebase hér. Í bili: staðfesting.
+  alert('Skor vistað staðbundið (Firebase-tenging kemur í næstu útgáfu).');
+}
+
+/* ---------------- HOLE MODAL ---------------- */
+function openHoleModal(holeIdx){
+  state.activeHole = holeIdx;
+  renderHoleModal();
+  document.getElementById('hole-modal-overlay').classList.add('active');
+}
+function closeHoleModal(){
+  document.getElementById('hole-modal-overlay').classList.remove('active');
+  renderScorecard();
+}
+function gotoHole(delta){
+  const min = state.currentNine*9, max = min+8;
+  let next = state.activeHole + delta;
+  if(next<min || next>max) return;
+  state.activeHole = next;
+  renderHoleModal();
+}
+function renderHoleModal(){
+  const idx = state.activeHole;
+  const min = state.currentNine*9, max = min+8;
+  document.getElementById('modal-hole-num').textContent = idx+1;
+  document.getElementById('hole-prev').disabled = idx<=min;
+  document.getElementById('hole-next').disabled = idx>=max;
+
+  const wrap = document.getElementById('modal-players');
+  wrap.innerHTML = '';
+  state.players.forEach((p, pi)=>{
+    const d = state.holes[idx][pi];
+    const col = document.createElement('div');
+    col.className = 'player-col';
+    col.innerHTML = `
+      <div class="pname">${p.name||p.label}</div>
+      <div class="ptotal" id="total-${pi}">${d.strokes}</div>
+      <div class="putt-count" id="putts-${pi}">${d.putts} pútt</div>
+      <button class="big-plus" onclick="addStroke(${pi})">+</button>
+      <button class="action-btn btn-putt" onclick="addPutt(${pi})">Pútt</button>
+      <button class="action-btn btn-vidi" onclick="addPenalty(${pi})">Víti +2</button>
+      <button class="undo-btn" onclick="undoStroke(${pi})">Leiðrétta ↺</button>
+    `;
+    wrap.appendChild(col);
+  });
+}
+function addStroke(pi){
+  const d = state.holes[state.activeHole][pi];
+  d.strokes++;
+  d._last = d._last || [];
+  d._last.push('stroke');
+  refreshPlayerCol(pi);
+}
+function addPutt(pi){
+  const d = state.holes[state.activeHole][pi];
+  d.strokes++; d.putts++;
+  d._last = d._last || [];
+  d._last.push('putt');
+  refreshPlayerCol(pi);
+}
+function addPenalty(pi){
+  const d = state.holes[state.activeHole][pi];
+  d.strokes += 2;
+  d._last = d._last || [];
+  d._last.push('penalty2');
+  refreshPlayerCol(pi);
+}
+function undoStroke(pi){
+  const d = state.holes[state.activeHole][pi];
+  if(!d._last || !d._last.length) return;
+  const last = d._last.pop();
+  if(last==='stroke') d.strokes = Math.max(0, d.strokes-1);
+  if(last==='putt'){ d.strokes = Math.max(0, d.strokes-1); d.putts = Math.max(0,d.putts-1); }
+  if(last==='penalty2') d.strokes = Math.max(0, d.strokes-2);
+  refreshPlayerCol(pi);
+}
+function refreshPlayerCol(pi){
+  const d = state.holes[state.activeHole][pi];
+  document.getElementById(`total-${pi}`).textContent = d.strokes;
+  document.getElementById(`putts-${pi}`).textContent = `${d.putts} pútt`;
+}
+
+/* ---------------- QUIT CONFIRM ---------------- */
+function askQuit(){ document.getElementById('quit-confirm-overlay').classList.add('active'); }
+function cancelQuit(){ document.getElementById('quit-confirm-overlay').classList.remove('active'); }
+function confirmQuit(){
+  document.getElementById('quit-confirm-overlay').classList.remove('active');
+  showSummary();
+}
+
+/* ---------------- SUMMARY ---------------- */
+function showSummary(){
+  const offset = state.currentNine*9;
+  let grandTotal = 0;
+  let rows = state.players.map((p,pi)=>{
+    let sum = 0;
+    for(let h=0; h<offset+9; h++) sum += state.holes[h][pi].strokes;
+    grandTotal += pi===0? 0 : 0; // per-player totals shown individually
+    return {name:p.name||p.label, total:sum};
+  });
+  document.getElementById('sum-course-date').textContent = `${state.course} · ${state.date}`;
+  document.getElementById('sum-total').textContent = rows[0]?.total ?? 0;
+
+  const table = document.getElementById('summary-table');
+  table.innerHTML = `<tr><th>Spilari</th><th>Högg</th></tr>` +
+    rows.map(r=>`<tr><td>${r.name}</td><td>${r.total}</td></tr>`).join('');
+
+  showScreen('screen-summary');
+}
+function restartApp(){
+  location.reload();
+}
+
+/* ---------------- SCREEN SWITCH ---------------- */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ---------------- INIT ---------------- */
+renderCourses();
+</script>
+</body>
+</html>

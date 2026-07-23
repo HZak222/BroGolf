@@ -94,6 +94,7 @@
     display:flex; justify-content:space-between; align-items:center;
   }
   .subtle-chip.selected{ background:var(--green); border-color:var(--green); color:var(--paper); }
+  .subtle-chip.disabled{ opacity:.35; pointer-events:none; }
   .add-new-btn{
     margin-top:8px; padding:12px; border-radius:12px; border:2px dashed var(--paper-line);
     background:transparent; color:var(--ink-soft); font-weight:700; font-size:14px; text-align:center; cursor:pointer;
@@ -141,6 +142,18 @@
   .hole-cell.done{ background:#fff; }
   .hole-cell.done .hscore{ color:var(--green); }
   .hole-cell:active{ background:var(--paper-line); }
+  .hole-mini{ display:flex; flex-direction:column; gap:3px; width:100%; padding:0 12px; margin-top:8px; }
+  .hole-mini .mini-row{ display:flex; justify-content:space-between; width:100%; font-size:12px; font-weight:700; color:var(--ink-soft); }
+  .hole-mini .mini-row .mini-val{ color:#B9B29A; font-variant-numeric:tabular-nums; }
+  .hole-cell.done .hole-mini .mini-row .mini-val{ color:var(--green); }
+
+  .totals-bar{ display:grid; background:var(--green); color:var(--paper); flex-shrink:0; }
+  .totals-bar .tcell{
+    padding:8px 4px; text-align:center; border-right:1px solid rgba(255,255,255,.15);
+    font-size:14px; font-weight:800; font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .totals-bar .tcell:last-child{ border-right:none; }
+  .totals-bar .tcell .tlabel{ display:block; font-size:9px; opacity:.7; font-weight:700; letter-spacing:1px; }
 
   .scorecard-footer{
     display:flex; gap:2px; flex-shrink:0; padding:2px;
@@ -159,17 +172,18 @@
 
   /* ---------- Hole entry modal ---------- */
   .modal-overlay{
-    position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:50;
-    display:none; align-items:flex-end; justify-content:center;
+    position:fixed; inset:0; background:var(--paper); z-index:50;
+    display:none; justify-content:center;
   }
   .modal-overlay.active{ display:flex; }
   .hole-modal{
-    background:var(--paper); width:100%; max-width:520px; border-radius:22px 22px 0 0;
-    display:flex; flex-direction:column; max-height:92vh; box-shadow:0 -8px 30px rgba(0,0,0,.35);
+    background:var(--paper); width:100%; max-width:520px;
+    display:flex; flex-direction:column; height:100%; height:100dvh;
   }
   .hole-modal-head{
-    background:var(--green); color:var(--paper); padding:16px 18px; display:flex; align-items:center; justify-content:space-between;
-    border-radius:22px 22px 0 0;
+    background:var(--green); color:var(--paper); flex-shrink:0;
+    padding: max(14px, env(safe-area-inset-top)) 18px 14px;
+    display:flex; align-items:center; justify-content:space-between;
   }
   .hole-modal-head .htitle{ font-size:20px; font-weight:800; }
   .hole-nav{ display:flex; gap:8px; }
@@ -183,29 +197,31 @@
     color:var(--paper); font-size:18px; cursor:pointer;
   }
   .players-columns{
-    flex:1; display:flex; overflow-x:auto; overflow-y:auto; padding:14px 10px 20px;
-    gap:10px;
+    flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr;
+    gap:8px; padding:8px 8px max(8px, env(safe-area-inset-bottom));
   }
   .player-col{
-    flex:1; min-width:0; background:#fff; border-radius:16px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:10px;
-    border:2px solid var(--paper-line);
+    min-width:0; min-height:0; background:#fff; border-radius:16px; padding:10px 8px 8px;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    border:2px solid var(--paper-line); overflow:hidden;
   }
-  .player-col .pname{ font-size:13px; font-weight:800; color:var(--ink-soft); text-align:center; height:32px; display:flex; align-items:center; }
-  .player-col .ptotal{ font-size:44px; font-weight:800; color:var(--green); font-variant-numeric:tabular-nums; line-height:1; }
-  .player-col .putt-count{ font-size:11px; font-weight:700; color:var(--ink-soft); }
+  .player-col .pname{ font-size:13px; font-weight:800; color:var(--ink-soft); text-align:center; flex-shrink:0; }
+  .player-col .ptotal{ font-size:15vw; font-weight:800; color:var(--green); font-variant-numeric:tabular-nums; line-height:1; flex-shrink:0; }
+  .player-col .putt-count{ font-size:11px; font-weight:700; color:var(--ink-soft); flex-shrink:0; }
   .big-plus{
-    width:100%; aspect-ratio:1; max-height:88px; border-radius:16px; border:none; background:var(--lawn);
-    color:#fff; font-size:38px; font-weight:800; cursor:pointer; box-shadow:var(--shadow);
+    width:100%; flex:1; min-height:0; border-radius:16px; border:none; background:var(--lawn);
+    color:#fff; font-size:40px; font-weight:800; cursor:pointer; box-shadow:var(--shadow);
   }
   .big-plus:active{ background:var(--lawn-bright); }
+  .action-row{ display:flex; gap:6px; width:100%; flex-shrink:0; }
   .action-btn{
-    width:100%; padding:12px 4px; border-radius:12px; border:none; font-size:13px; font-weight:800; cursor:pointer;
+    flex:1; padding:10px 2px; border-radius:12px; border:none; font-size:12px; font-weight:800; cursor:pointer;
   }
   .btn-vidi{ background:var(--flag); color:#fff; }
   .btn-putt{ background:var(--gold); color:#3a2a06; }
   .undo-btn{
-    width:100%; padding:8px 4px; border-radius:10px; border:2px solid var(--paper-line); background:transparent;
-    color:var(--ink-soft); font-size:12px; font-weight:700; cursor:pointer; margin-top:2px;
+    width:100%; padding:6px 4px; border-radius:10px; border:2px solid var(--paper-line); background:transparent;
+    color:var(--ink-soft); font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0;
   }
 
   /* ---------- Confirm quit popup ---------- */
@@ -287,6 +303,7 @@
     </div>
     <div class="players-bar" id="sc-players"></div>
     <div class="holes-grid" id="holes-grid"></div>
+    <div class="totals-bar" id="totals-bar"></div>
     <div class="scorecard-footer">
       <button class="foot-btn foot-vista" onclick="saveRound()">Vista<span class="sub">skor</span></button>
       <button class="foot-btn foot-haetta" onclick="askQuit()">Hætta</button>
@@ -387,17 +404,28 @@ function renderMateSlots(){
     block.innerHTML = `<div class="slot-title">Meðspilari ${i+1}</div>
       <div class="subtle-list" id="mate-list-${i}"></div>`;
     c.appendChild(block);
-    const list = block.querySelector(`#mate-list-${i}`);
+  }
+  refreshMateLists();
+}
+function refreshMateLists(){
+  for(let i=0;i<state.mateCount;i++){
+    const list = document.getElementById(`mate-list-${i}`);
+    if(!list) continue;
+    list.innerHTML = '';
     RECENT_PLAYERS.forEach(name=>{
+      const takenElsewhere = state.mates.some((m, mi)=> mi!==i && m===name);
       const chip = document.createElement('div');
-      chip.className = 'subtle-chip';
+      chip.className = 'subtle-chip mate-chip'
+        + (state.mates[i]===name ? ' selected' : '')
+        + (takenElsewhere ? ' disabled' : '');
       chip.textContent = name;
-      chip.onclick = ()=>{
-        state.mates[i] = name;
-        list.querySelectorAll('.subtle-chip').forEach(el=>el.classList.remove('selected'));
-        chip.classList.add('selected');
-        checkSetupReady();
-      };
+      if(!takenElsewhere){
+        chip.onclick = ()=>{
+          state.mates[i] = name;
+          refreshMateLists();
+          checkSetupReady();
+        };
+      }
       list.appendChild(chip);
     });
   }
@@ -407,8 +435,9 @@ function renderCourses(){
   favWrap.innerHTML = '';
   FAV_COURSES.forEach(name=>{
     const el = document.createElement('div');
-    el.className = 'chip';
+    el.className = 'chip course-chip';
     el.innerHTML = `<span>${name}</span><span class="star">★</span>`;
+    if(state.course===name) el.classList.add('selected');
     el.onclick = ()=>selectCourse(name, el);
     favWrap.appendChild(el);
   });
@@ -416,15 +445,16 @@ function renderCourses(){
   recWrap.innerHTML = '';
   RECENT_COURSES.forEach(name=>{
     const el = document.createElement('div');
-    el.className = 'subtle-chip';
+    el.className = 'subtle-chip course-chip';
     el.textContent = name;
+    if(state.course===name) el.classList.add('selected');
     el.onclick = ()=>selectCourse(name, el);
     recWrap.appendChild(el);
   });
 }
 function selectCourse(name, el){
   state.course = name;
-  document.querySelectorAll('.chip, .subtle-chip').forEach(e=>e.classList.remove('selected'));
+  document.querySelectorAll('.course-chip').forEach(e=>e.classList.remove('selected'));
   el.classList.add('selected');
   checkSetupReady();
 }
@@ -467,15 +497,34 @@ function renderScorecard(){
   for(let i=1;i<=9;i++){
     const holeIdx = offset + i - 1;
     const holeData = state.holes[holeIdx];
-    const total = holeData.reduce((s,p)=>s+p.strokes,0);
-    const done = total>0;
+    const done = holeData.some(p=>p.strokes>0);
     const cell = document.createElement('div');
     cell.className = 'hole-cell' + (done?' done':'');
-    cell.innerHTML = `<span class="hnum">${offset+i}</span>${done? `<span class="hscore">${total}</span>` : `<span class="hdash">–</span>`}`;
+    let inner = `<span class="hnum">${offset+i}</span>`;
+    if(state.players.length===1){
+      inner += done ? `<span class="hscore">${holeData[0].strokes}</span>` : `<span class="hdash">–</span>`;
+    } else if(done){
+      inner += `<div class="hole-mini">` + state.players.map((p,pi)=>
+        `<div class="mini-row"><span>${p.label}</span><span class="mini-val">${holeData[pi].strokes||'–'}</span></div>`
+      ).join('') + `</div>`;
+    } else {
+      inner += `<span class="hdash">–</span>`;
+    }
+    cell.innerHTML = inner;
     cell.onclick = ()=> openHoleModal(holeIdx);
     grid.appendChild(cell);
   }
   document.getElementById('next9btn').disabled = state.currentNine===1;
+  renderTotalsBar();
+}
+function renderTotalsBar(){
+  const bar = document.getElementById('totals-bar');
+  bar.style.gridTemplateColumns = `repeat(${state.players.length}, 1fr)`;
+  bar.innerHTML = state.players.map((p,pi)=>{
+    let sum = 0;
+    for(let h=0; h<18; h++) sum += state.holes[h][pi].strokes;
+    return `<div class="tcell"><span class="tlabel">${p.label}</span>${sum}</div>`;
+  }).join('');
 }
 function nextNine(){
   state.currentNine = 1;
@@ -512,17 +561,23 @@ function renderHoleModal(){
 
   const wrap = document.getElementById('modal-players');
   wrap.innerHTML = '';
+  const n = state.players.length;
   state.players.forEach((p, pi)=>{
     const d = state.holes[idx][pi];
     const col = document.createElement('div');
     col.className = 'player-col';
+    if(n===1){ col.style.gridColumn='1 / 3'; col.style.gridRow='1 / 3'; }
+    else if(n===2){ col.style.gridRow='1 / 3'; col.style.gridColumn = pi===0 ? '1' : '2'; }
+    else if(n===3 && pi===2){ col.style.gridColumn='1 / 3'; }
     col.innerHTML = `
       <div class="pname">${p.name||p.label}</div>
       <div class="ptotal" id="total-${pi}">${d.strokes}</div>
       <div class="putt-count" id="putts-${pi}">${d.putts} pútt</div>
       <button class="big-plus" onclick="addStroke(${pi})">+</button>
-      <button class="action-btn btn-putt" onclick="addPutt(${pi})">Pútt</button>
-      <button class="action-btn btn-vidi" onclick="addPenalty(${pi})">Víti +2</button>
+      <div class="action-row">
+        <button class="action-btn btn-putt" onclick="addPutt(${pi})">Pútt</button>
+        <button class="action-btn btn-vidi" onclick="addPenalty(${pi})">Víti +1</button>
+      </div>
       <button class="undo-btn" onclick="undoStroke(${pi})">Leiðrétta ↺</button>
     `;
     wrap.appendChild(col);
@@ -544,9 +599,9 @@ function addPutt(pi){
 }
 function addPenalty(pi){
   const d = state.holes[state.activeHole][pi];
-  d.strokes += 2;
+  d.strokes += 1;
   d._last = d._last || [];
-  d._last.push('penalty2');
+  d._last.push('penalty1');
   refreshPlayerCol(pi);
 }
 function undoStroke(pi){
@@ -555,7 +610,7 @@ function undoStroke(pi){
   const last = d._last.pop();
   if(last==='stroke') d.strokes = Math.max(0, d.strokes-1);
   if(last==='putt'){ d.strokes = Math.max(0, d.strokes-1); d.putts = Math.max(0,d.putts-1); }
-  if(last==='penalty2') d.strokes = Math.max(0, d.strokes-2);
+  if(last==='penalty1') d.strokes = Math.max(0, d.strokes-1);
   refreshPlayerCol(pi);
 }
 function refreshPlayerCol(pi){

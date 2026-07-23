@@ -137,6 +137,7 @@
   }
   .round-card-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
   .rc-course{ font-size:16px; font-weight:800; color:var(--green); }
+  .rc-role{ font-size:10px; font-weight:800; color:#fff; background:var(--green-mid); padding:2px 6px; border-radius:6px; vertical-align:middle; }
   .rc-date{ font-size:12px; font-weight:600; color:var(--ink-soft); }
   .round-card-scores{ display:flex; flex-wrap:wrap; gap:10px; }
   .rc-score{ font-size:13px; font-weight:600; color:var(--ink-soft); }
@@ -147,6 +148,8 @@
     padding:12px 14px; border-radius:12px; border:1px solid var(--paper-line); background:#fff;
   }
   .settings-row .sname{ font-size:14px; font-weight:700; color:var(--ink); }
+  .srow-text{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .sstats{ font-size:11px; font-weight:600; color:var(--ink-soft); }
   .settings-row .srow-btns{ display:flex; gap:6px; flex-shrink:0; }
   .srow-btn{
     border:none; border-radius:8px; padding:7px 10px; font-size:12px; font-weight:800; cursor:pointer;
@@ -335,6 +338,11 @@
         <button class="sort-pill selected" data-sort="date" onclick="setHomeSort('date')">Nýjast fyrst</button>
         <button class="sort-pill" data-sort="course" onclick="setHomeSort('course')">Völlur A-Ö</button>
       </div>
+      <div class="sort-row">
+        <button class="sort-pill selected" data-filter="all" onclick="setHomeFilter('all')">Allir</button>
+        <button class="sort-pill" data-filter="BA" onclick="setHomeFilter('BA')">BA</button>
+        <button class="sort-pill" data-filter="JBA" onclick="setHomeFilter('JBA')">JBA</button>
+      </div>
 
       <div id="home-list"></div>
     </div>
@@ -353,7 +361,7 @@
 
       <div class="section-label"><span class="num">2</span> Vellir</div>
       <div class="subtle-list" id="settings-courses"></div>
-      <div class="add-new-btn" onclick="addNewCourse(); renderSettings();">+ Bæta við velli</div>
+      <div class="add-new-btn" onclick="addNewCourse()">+ Bæta við velli</div>
     </div>
   </div>
 
@@ -461,7 +469,18 @@
       <div class="par-grid" id="par-grid-back"></div>
     </div>
     <div class="par-footer">
-      <button class="confirm-btn" onclick="closeParEditor()">Vista og loka</button>
+      <button class="confirm-btn" onclick="saveAndCloseParEditor()">Vista og loka</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== GENERIC CONFIRM POPUP (settings changes) ========== -->
+<div class="confirm-overlay" id="generic-confirm-overlay">
+  <div class="confirm-box">
+    <p id="generic-confirm-text">Ertu viss?</p>
+    <div class="confirm-btns">
+      <button class="cbtn-no" onclick="genericConfirmNo()">Nei</button>
+      <button class="cbtn-yes" onclick="genericConfirmYes()">Já</button>
     </div>
   </div>
 </div>
@@ -491,7 +510,15 @@ let COURSES = [
   {name:"Hlíðavöllur", favorite:false, pars:Array(18).fill(4)},
   {name:"Úlfarsfell", favorite:false, pars:Array(18).fill(4)}
 ];
-let RECENT_PLAYERS = ["Siggi", "Nonni", "Gulli", "Kári", "Óli", "Denni"];
+let RECENT_PLAYERS = [
+  {name:"Siggi", handicap:null, withBA:0, withJBA:0},
+  {name:"Nonni", handicap:null, withBA:0, withJBA:0},
+  {name:"Gulli", handicap:null, withBA:0, withJBA:0},
+  {name:"Kári", handicap:null, withBA:0, withJBA:0},
+  {name:"Óli", handicap:null, withBA:0, withJBA:0},
+  {name:"Denni", handicap:null, withBA:0, withJBA:0}
+];
+let homeFilterRole = 'all';
 let SAVED_ROUNDS = []; // týnist við endurhleðslu þar til Firebase er tengt
 let homeSortMode = 'date';
 
@@ -544,7 +571,8 @@ function refreshMateLists(){
     const list = document.getElementById(`mate-list-${i}`);
     if(!list) continue;
     list.innerHTML = '';
-    RECENT_PLAYERS.forEach(name=>{
+    RECENT_PLAYERS.forEach(player=>{
+      const name = player.name;
       const takenElsewhere = state.mates.some((m, mi)=> mi!==i && m===name);
       const chip = document.createElement('div');
       chip.className = 'subtle-chip mate-chip'
@@ -592,10 +620,12 @@ function selectCourse(name, el){
 }
 function addNewCourse(){
   const name = prompt('Nafn á nýjum velli:');
-  if(name && name.trim()){
+  if(!name || !name.trim()) return;
+  showConfirm(`Bæta við "${name.trim()}" sem velli?`, ()=>{
     COURSES.unshift({name:name.trim(), favorite:false, pars:Array(18).fill(4)});
     renderCourses();
-  }
+    if(document.getElementById('screen-settings').classList.contains('active')) renderSettings();
+  });
 }
 function checkSetupReady(){
   let ready = !!state.role && !!state.course;
@@ -671,6 +701,7 @@ function nextNine(){
 function saveCurrentRound(){
   const rec = {
     id: state.roundId,
+    role: state.role,
     course: state.course,
     date: state.date,
     dateObj: state.roundDateObj || new Date(),
@@ -680,7 +711,17 @@ function saveCurrentRound(){
     })
   };
   const existingIdx = SAVED_ROUNDS.findIndex(r=>r.id===rec.id);
-  if(existingIdx>=0) SAVED_ROUNDS[existingIdx] = rec; else SAVED_ROUNDS.unshift(rec);
+  if(existingIdx>=0){
+    SAVED_ROUNDS[existingIdx] = rec;
+  } else {
+    SAVED_ROUNDS.unshift(rec);
+    state.mates.filter(Boolean).forEach(mateName=>{
+      const player = RECENT_PLAYERS.find(p=>p.name===mateName);
+      if(!player) return;
+      if(state.role==='BA') player.withBA++;
+      else if(state.role==='JBA') player.withJBA++;
+    });
+  }
   return rec;
 }
 function saveRound(){
@@ -833,12 +874,17 @@ function goToNewRound(){
 /* ---------------- HOME SCREEN ---------------- */
 function setHomeSort(mode){
   homeSortMode = mode;
-  document.querySelectorAll('.sort-pill').forEach(b=>b.classList.toggle('selected', b.dataset.sort===mode));
+  document.querySelectorAll('[data-sort]').forEach(b=>b.classList.toggle('selected', b.dataset.sort===mode));
+  renderHomeList();
+}
+function setHomeFilter(role){
+  homeFilterRole = role;
+  document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('selected', b.dataset.filter===role));
   renderHomeList();
 }
 function renderHomeList(){
   const wrap = document.getElementById('home-list');
-  let rounds = [...SAVED_ROUNDS];
+  let rounds = SAVED_ROUNDS.filter(r=> homeFilterRole==='all' || r.role===homeFilterRole);
   if(homeSortMode==='date') rounds.sort((a,b)=> b.dateObj - a.dateObj);
   else rounds.sort((a,b)=> a.course.localeCompare(b.course, 'is'));
   if(rounds.length===0){
@@ -848,7 +894,7 @@ function renderHomeList(){
   wrap.innerHTML = rounds.map(r=>`
     <div class="round-card" onclick="viewRound(${r.id})">
       <div class="round-card-top">
-        <span class="rc-course">${r.course}</span>
+        <span class="rc-course">${r.course} <span class="rc-role">${r.role}</span></span>
         <span class="rc-date">${r.date}</span>
       </div>
       <div class="round-card-scores">
@@ -858,15 +904,38 @@ function renderHomeList(){
   `).join('');
 }
 
+/* ---------------- GENERIC CONFIRM POPUP ---------------- */
+let _pendingConfirmYes = null;
+function showConfirm(message, onYes){
+  document.getElementById('generic-confirm-text').textContent = message;
+  _pendingConfirmYes = onYes;
+  document.getElementById('generic-confirm-overlay').classList.add('active');
+}
+function genericConfirmYes(){
+  document.getElementById('generic-confirm-overlay').classList.remove('active');
+  if(_pendingConfirmYes) _pendingConfirmYes();
+  _pendingConfirmYes = null;
+}
+function genericConfirmNo(){
+  document.getElementById('generic-confirm-overlay').classList.remove('active');
+  _pendingConfirmYes = null;
+}
+
 /* ---------------- SETTINGS SCREEN ---------------- */
 function renderSettings(){
   const pwrap = document.getElementById('settings-players');
   pwrap.innerHTML = '';
-  RECENT_PLAYERS.forEach((name, i)=>{
+  RECENT_PLAYERS.forEach((player, i)=>{
     const row = document.createElement('div');
     row.className = 'settings-row';
-    row.innerHTML = `<span class="sname">${name}</span>
-      <div class="srow-btns"><button class="srow-btn" onclick="renamePlayer(${i})">Breyta</button></div>`;
+    row.innerHTML = `<div class="srow-text">
+        <span class="sname">${player.name}</span>
+        <span class="sstats">Forgjöf: ${player.handicap ?? '—'} · Með BA: ${player.withBA} leiki · Með JBA: ${player.withJBA} leiki</span>
+      </div>
+      <div class="srow-btns">
+        <button class="srow-btn" onclick="renamePlayer(${i})">Nafn</button>
+        <button class="srow-btn par-btn" onclick="editHandicap(${i})">Forgjöf</button>
+      </div>`;
     pwrap.appendChild(row);
   });
 
@@ -875,7 +944,7 @@ function renderSettings(){
   COURSES.forEach((c, i)=>{
     const row = document.createElement('div');
     row.className = 'settings-row';
-    row.innerHTML = `<span class="sname">${c.name}${c.favorite? ' ★':''}</span>
+    row.innerHTML = `<div class="srow-text"><span class="sname">${c.name}${c.favorite? ' ★':''}</span></div>
       <div class="srow-btns">
         <button class="srow-btn" onclick="renameCourse(${i})">Breyta</button>
         <button class="srow-btn par-btn" onclick="openParEditor(${i})">Par</button>
@@ -885,25 +954,39 @@ function renderSettings(){
 }
 function addNewPlayer(){
   const name = prompt('Nafn á nýjum meðspilara:');
-  if(name && name.trim()){
-    RECENT_PLAYERS.push(name.trim());
+  if(!name || !name.trim()) return;
+  showConfirm(`Bæta við "${name.trim()}" sem meðspilara?`, ()=>{
+    RECENT_PLAYERS.push({name:name.trim(), handicap:null, withBA:0, withJBA:0});
     renderSettings();
-  }
+  });
 }
 function renamePlayer(i){
-  const name = prompt('Breyta nafni:', RECENT_PLAYERS[i]);
-  if(name && name.trim()){
-    RECENT_PLAYERS[i] = name.trim();
+  const name = prompt('Breyta nafni:', RECENT_PLAYERS[i].name);
+  if(!name || !name.trim()) return;
+  showConfirm(`Breyta nafni í "${name.trim()}"?`, ()=>{
+    RECENT_PLAYERS[i].name = name.trim();
     renderSettings();
-  }
+  });
+}
+function editHandicap(i){
+  const current = RECENT_PLAYERS[i].handicap;
+  const val = prompt('Forgjöf:', current ?? '');
+  if(val===null || val.trim()==='') return;
+  const num = parseFloat(val.replace(',', '.'));
+  if(isNaN(num)) return;
+  showConfirm(`Setja forgjöf ${num} á ${RECENT_PLAYERS[i].name}?`, ()=>{
+    RECENT_PLAYERS[i].handicap = num;
+    renderSettings();
+  });
 }
 function renameCourse(i){
   const name = prompt('Breyta nafni vallar:', COURSES[i].name);
-  if(name && name.trim()){
+  if(!name || !name.trim()) return;
+  showConfirm(`Breyta nafni vallar í "${name.trim()}"?`, ()=>{
     COURSES[i].name = name.trim();
     renderSettings();
     renderCourses();
-  }
+  });
 }
 
 /* ---------------- PAR EDITOR ---------------- */
@@ -915,6 +998,11 @@ function openParEditor(i){
 }
 function closeParEditor(){
   document.getElementById('par-modal-overlay').classList.remove('active');
+}
+function saveAndCloseParEditor(){
+  showConfirm('Vista breytingar á pari fyrir þennan völl?', ()=>{
+    closeParEditor();
+  });
 }
 function renderParGrid(){
   const c = COURSES[state.parEditCourseIdx];

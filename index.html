@@ -110,6 +110,70 @@
   }
   .confirm-btn:disabled{ background:#B9B29A; box-shadow:none; }
 
+  /* ---------- Home / Settings nav ---------- */
+  .back-btn{
+    position:absolute; left:16px; top:max(18px, env(safe-area-inset-top));
+    background:rgba(255,255,255,.15); border:none; color:var(--paper); font-size:14px; font-weight:800;
+    padding:8px 12px; border-radius:10px; cursor:pointer;
+  }
+  .gear-btn{
+    position:absolute; right:16px; top:max(18px, env(safe-area-inset-top));
+    background:rgba(255,255,255,.15); border:none; color:var(--paper); font-size:18px;
+    width:38px; height:38px; border-radius:10px; cursor:pointer;
+  }
+  .setup-header{ position:relative; }
+  .new-round-btn{ margin-bottom:20px; background:var(--lawn) !important; }
+  .par-footer .confirm-btn{ background:var(--lawn); }
+  .sort-row{ display:flex; gap:8px; margin-bottom:16px; }
+  .sort-pill{
+    flex:1; padding:10px 6px; border-radius:12px; border:2px solid var(--paper-line);
+    background:#fff; font-size:13px; font-weight:800; color:var(--ink-soft); cursor:pointer;
+  }
+  .sort-pill.selected{ background:var(--green); border-color:var(--green); color:var(--paper); }
+  .empty-hint{ text-align:center; color:var(--ink-soft); font-size:14px; font-weight:600; padding:30px 10px; }
+  .round-card{
+    background:#fff; border-radius:14px; padding:14px 16px; border:2px solid var(--paper-line);
+    margin-bottom:10px; cursor:pointer;
+  }
+  .round-card-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .rc-course{ font-size:16px; font-weight:800; color:var(--green); }
+  .rc-date{ font-size:12px; font-weight:600; color:var(--ink-soft); }
+  .round-card-scores{ display:flex; flex-wrap:wrap; gap:10px; }
+  .rc-score{ font-size:13px; font-weight:600; color:var(--ink-soft); }
+  .rc-score b{ color:var(--ink); font-variant-numeric:tabular-nums; }
+
+  .settings-row{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:12px 14px; border-radius:12px; border:1px solid var(--paper-line); background:#fff;
+  }
+  .settings-row .sname{ font-size:14px; font-weight:700; color:var(--ink); }
+  .settings-row .srow-btns{ display:flex; gap:6px; flex-shrink:0; }
+  .srow-btn{
+    border:none; border-radius:8px; padding:7px 10px; font-size:12px; font-weight:800; cursor:pointer;
+    background:var(--paper-line); color:var(--ink-soft);
+  }
+  .srow-btn.par-btn{ background:var(--gold); color:#3a2a06; }
+
+  /* ---------- Par editor ---------- */
+  .par-modal{
+    background:var(--paper); width:100%; max-width:520px; margin:0 auto;
+    display:flex; flex-direction:column; height:100%; height:100dvh;
+  }
+  .par-body{ flex:1; overflow-y:auto; padding:16px; }
+  .par-nine-title{ font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--green); margin:16px 0 8px; }
+  .par-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .par-cell{
+    background:#fff; border:2px solid var(--paper-line); border-radius:12px; padding:8px; text-align:center;
+  }
+  .par-cell .par-hnum{ font-size:11px; font-weight:700; color:var(--ink-soft); }
+  .par-cell .par-stepper{ display:flex; align-items:center; justify-content:space-between; margin-top:4px; }
+  .par-cell .par-stepper button{
+    width:28px; height:28px; border-radius:8px; border:none; background:var(--paper-line);
+    color:var(--ink); font-size:16px; font-weight:800; cursor:pointer;
+  }
+  .par-cell .par-val{ font-size:18px; font-weight:800; color:var(--green); font-variant-numeric:tabular-nums; }
+  .par-footer{ padding:14px 16px max(14px, env(safe-area-inset-bottom)); }
+
   /* ---------- Scorecard screen ---------- */
   .bar{
     width:100%; background:var(--green); color:var(--paper);
@@ -153,7 +217,7 @@
     font-size:14px; font-weight:800; font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .totals-bar .tcell:last-child{ border-right:none; }
-  .totals-bar .tcell .tlabel{ display:block; font-size:9px; opacity:.7; font-weight:700; letter-spacing:1px; }
+  .totals-bar .tcell .tlabel{ display:block; font-size:9px; opacity:.7; font-weight:700; letter-spacing:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
   .scorecard-footer{
     display:flex; gap:2px; flex-shrink:0; padding:2px;
@@ -257,9 +321,46 @@
 <body>
 <div id="app">
 
-  <!-- ========== SETUP SCREEN ========== -->
-  <div class="screen active" id="screen-setup">
+  <!-- ========== HOME SCREEN ========== -->
+  <div class="screen active" id="screen-home">
+    <div class="setup-header home-header">
+      <button class="gear-btn" onclick="showScreen('screen-settings'); renderSettings();">⚙</button>
+      <div class="logo">Golfhringur</div>
+      <h1>Hringir</h1>
+    </div>
+    <div class="setup-body">
+      <button class="confirm-btn new-round-btn" onclick="goToNewRound()">+ Nýr hringur</button>
+
+      <div class="sort-row">
+        <button class="sort-pill selected" data-sort="date" onclick="setHomeSort('date')">Nýjast fyrst</button>
+        <button class="sort-pill" data-sort="course" onclick="setHomeSort('course')">Völlur A-Ö</button>
+      </div>
+
+      <div id="home-list"></div>
+    </div>
+  </div>
+
+  <!-- ========== SETTINGS SCREEN ========== -->
+  <div class="screen" id="screen-settings">
     <div class="setup-header">
+      <button class="back-btn" onclick="showScreen('screen-home')">‹ Til baka</button>
+      <h1>Stillingar</h1>
+    </div>
+    <div class="setup-body">
+      <div class="section-label"><span class="num">1</span> Meðspilarar</div>
+      <div class="subtle-list" id="settings-players"></div>
+      <div class="add-new-btn" onclick="addNewPlayer()">+ Bæta við spilara</div>
+
+      <div class="section-label"><span class="num">2</span> Vellir</div>
+      <div class="subtle-list" id="settings-courses"></div>
+      <div class="add-new-btn" onclick="addNewCourse(); renderSettings();">+ Bæta við velli</div>
+    </div>
+  </div>
+
+  <!-- ========== SETUP SCREEN ========== -->
+  <div class="screen" id="screen-setup">
+    <div class="setup-header">
+      <button class="back-btn" onclick="showScreen('screen-home')">‹ Til baka</button>
       <div class="logo">Golfhringur</div>
       <h1>Byrja hring</h1>
     </div>
@@ -325,7 +426,7 @@
       <table class="summary-table" id="summary-table"></table>
     </div>
     <div class="summary-footer">
-      <button class="sbtn-new" onclick="restartApp()">Nýr hringur</button>
+      <button class="sbtn-new" id="summary-restart-btn">Nýr hringur</button>
     </div>
   </div>
 
@@ -346,6 +447,25 @@
   </div>
 </div>
 
+<!-- ========== PAR EDITOR MODAL ========== -->
+<div class="modal-overlay" id="par-modal-overlay">
+  <div class="par-modal">
+    <div class="hole-modal-head">
+      <div class="htitle" id="par-modal-title">Par — Völlur</div>
+      <button class="close-x" onclick="closeParEditor()">✕</button>
+    </div>
+    <div class="par-body">
+      <div class="par-nine-title">Holur 1–9</div>
+      <div class="par-grid" id="par-grid-front"></div>
+      <div class="par-nine-title">Holur 10–18</div>
+      <div class="par-grid" id="par-grid-back"></div>
+    </div>
+    <div class="par-footer">
+      <button class="confirm-btn" onclick="closeParEditor()">Vista og loka</button>
+    </div>
+  </div>
+</div>
+
 <!-- ========== CONFIRM QUIT POPUP ========== -->
 <div class="confirm-overlay" id="quit-confirm-overlay">
   <div class="confirm-box">
@@ -361,9 +481,19 @@
 /* ============================================================
    MOCK GAGNASETT — skiptist út fyrir Firebase í næstu umferð
    ============================================================ */
-const FAV_COURSES = ["Kiðjaberg", "Grafarholt", "Korpúlfsstaðir", "Vestmannaeyjar"];
-const RECENT_COURSES = ["Leirdalur", "Setbergsvöllur", "Hlíðavöllur", "Úlfarsfell"];
-const RECENT_PLAYERS = ["Siggi", "Nonni", "Gulli", "Kári", "Óli", "Denni"];
+let COURSES = [
+  {name:"Kiðjaberg", favorite:true, pars:Array(18).fill(4)},
+  {name:"Grafarholt", favorite:true, pars:Array(18).fill(4)},
+  {name:"Korpúlfsstaðir", favorite:true, pars:Array(18).fill(4)},
+  {name:"Vestmannaeyjar", favorite:true, pars:Array(18).fill(4)},
+  {name:"Leirdalur", favorite:false, pars:Array(18).fill(4)},
+  {name:"Setbergsvöllur", favorite:false, pars:Array(18).fill(4)},
+  {name:"Hlíðavöllur", favorite:false, pars:Array(18).fill(4)},
+  {name:"Úlfarsfell", favorite:false, pars:Array(18).fill(4)}
+];
+let RECENT_PLAYERS = ["Siggi", "Nonni", "Gulli", "Kári", "Óli", "Denni"];
+let SAVED_ROUNDS = []; // týnist við endurhleðslu þar til Firebase er tengt
+let homeSortMode = 'date';
 
 /* ============================================================
    STATE
@@ -377,7 +507,9 @@ let state = {
   players: [],         // [{label, name}]  label = "BA"/"JBA"/nafn
   holes: [],           // [{[playerIdx]: {strokes, putts}}] lengd 18 (1-9 fyrri, 10-18 seinni)
   currentNine: 0,       // 0 = holur 1-9, 1 = holur 10-18
-  activeHole: 1
+  activeHole: 1,
+  viewingHistory: false,
+  parEditCourseIdx: null
 };
 
 /* ---------------- SETUP SCREEN LOGIC ---------------- */
@@ -433,22 +565,22 @@ function refreshMateLists(){
 function renderCourses(){
   const favWrap = document.getElementById('fav-courses');
   favWrap.innerHTML = '';
-  FAV_COURSES.forEach(name=>{
+  COURSES.filter(c=>c.favorite).forEach(c=>{
     const el = document.createElement('div');
     el.className = 'chip course-chip';
-    el.innerHTML = `<span>${name}</span><span class="star">★</span>`;
-    if(state.course===name) el.classList.add('selected');
-    el.onclick = ()=>selectCourse(name, el);
+    el.innerHTML = `<span>${c.name}</span><span class="star">★</span>`;
+    if(state.course===c.name) el.classList.add('selected');
+    el.onclick = ()=>selectCourse(c.name, el);
     favWrap.appendChild(el);
   });
   const recWrap = document.getElementById('recent-courses');
   recWrap.innerHTML = '';
-  RECENT_COURSES.forEach(name=>{
+  COURSES.filter(c=>!c.favorite).forEach(c=>{
     const el = document.createElement('div');
     el.className = 'subtle-chip course-chip';
-    el.textContent = name;
-    if(state.course===name) el.classList.add('selected');
-    el.onclick = ()=>selectCourse(name, el);
+    el.textContent = c.name;
+    if(state.course===c.name) el.classList.add('selected');
+    el.onclick = ()=>selectCourse(c.name, el);
     recWrap.appendChild(el);
   });
 }
@@ -461,7 +593,7 @@ function selectCourse(name, el){
 function addNewCourse(){
   const name = prompt('Nafn á nýjum velli:');
   if(name && name.trim()){
-    FAV_COURSES.unshift(name.trim());
+    COURSES.unshift({name:name.trim(), favorite:false, pars:Array(18).fill(4)});
     renderCourses();
   }
 }
@@ -473,10 +605,12 @@ function checkSetupReady(){
   document.getElementById('confirm-setup-btn').disabled = !ready;
 }
 function confirmSetup(){
-  state.players = [{label: state.role, name: state.role}];
-  state.mates.forEach((m,i)=> state.players.push({label:`Meðsp. ${i+1}`, name:m}));
+  state.players = [{name: state.role, role:'main'}];
+  state.mates.forEach((m,i)=> state.players.push({name:m, role:'mate', slot:i}));
   state.holes = new Array(18).fill(null).map(()=> state.players.map(()=>({strokes:0, putts:0})));
   state.date = new Date().toLocaleDateString('is-IS', {day:'numeric', month:'long', year:'numeric'});
+  state.roundId = Date.now();
+  state.roundDateObj = new Date();
   state.currentNine = 0;
   showScreen('screen-scorecard');
   renderScorecard();
@@ -489,7 +623,7 @@ function renderScorecard(){
 
   const pbar = document.getElementById('sc-players');
   pbar.style.gridTemplateColumns = `repeat(${state.players.length}, 1fr)`;
-  pbar.innerHTML = state.players.map(p=>`<div class="pcell"><span class="role">${p.label}</span>${p.name||p.label}</div>`).join('');
+  pbar.innerHTML = state.players.map(p=>`<div class="pcell">${p.name}</div>`).join('');
 
   const grid = document.getElementById('holes-grid');
   grid.innerHTML = '';
@@ -505,7 +639,7 @@ function renderScorecard(){
       inner += done ? `<span class="hscore">${holeData[0].strokes}</span>` : `<span class="hdash">–</span>`;
     } else if(done){
       inner += `<div class="hole-mini">` + state.players.map((p,pi)=>
-        `<div class="mini-row"><span>${p.label}</span><span class="mini-val">${holeData[pi].strokes||'–'}</span></div>`
+        `<div class="mini-row"><span>${shortName(p.name)}</span><span class="mini-val">${holeData[pi].strokes||'–'}</span></div>`
       ).join('') + `</div>`;
     } else {
       inner += `<span class="hdash">–</span>`;
@@ -517,22 +651,41 @@ function renderScorecard(){
   document.getElementById('next9btn').disabled = state.currentNine===1;
   renderTotalsBar();
 }
+function shortName(name){
+  if(!name) return '—';
+  return name.length>7 ? name.slice(0,6)+'.' : name;
+}
 function renderTotalsBar(){
   const bar = document.getElementById('totals-bar');
   bar.style.gridTemplateColumns = `repeat(${state.players.length}, 1fr)`;
   bar.innerHTML = state.players.map((p,pi)=>{
     let sum = 0;
     for(let h=0; h<18; h++) sum += state.holes[h][pi].strokes;
-    return `<div class="tcell"><span class="tlabel">${p.label}</span>${sum}</div>`;
+    return `<div class="tcell"><span class="tlabel">${p.name}</span>${sum}</div>`;
   }).join('');
 }
 function nextNine(){
   state.currentNine = 1;
   renderScorecard();
 }
+function saveCurrentRound(){
+  const rec = {
+    id: state.roundId,
+    course: state.course,
+    date: state.date,
+    dateObj: state.roundDateObj || new Date(),
+    players: state.players.map((p,pi)=>{
+      let sum=0; for(let h=0;h<18;h++) sum += state.holes[h][pi].strokes;
+      return {name:p.name, total:sum};
+    })
+  };
+  const existingIdx = SAVED_ROUNDS.findIndex(r=>r.id===rec.id);
+  if(existingIdx>=0) SAVED_ROUNDS[existingIdx] = rec; else SAVED_ROUNDS.unshift(rec);
+  return rec;
+}
 function saveRound(){
-  // TODO: senda state.holes í Firebase hér. Í bili: staðfesting.
-  alert('Skor vistað staðbundið (Firebase-tenging kemur í næstu útgáfu).');
+  saveCurrentRound();
+  alert('Skor vistað (staðbundið í bili — Firebase-tenging kemur í næstu umferð).');
 }
 
 /* ---------------- HOLE MODAL ---------------- */
@@ -629,25 +782,161 @@ function confirmQuit(){
 
 /* ---------------- SUMMARY ---------------- */
 function showSummary(){
-  const offset = state.currentNine*9;
-  let grandTotal = 0;
-  let rows = state.players.map((p,pi)=>{
-    let sum = 0;
-    for(let h=0; h<offset+9; h++) sum += state.holes[h][pi].strokes;
-    grandTotal += pi===0? 0 : 0; // per-player totals shown individually
-    return {name:p.name||p.label, total:sum};
-  });
-  document.getElementById('sum-course-date').textContent = `${state.course} · ${state.date}`;
-  document.getElementById('sum-total').textContent = rows[0]?.total ?? 0;
+  const rec = saveCurrentRound();
+  document.getElementById('sum-course-date').textContent = `${rec.course} · ${rec.date}`;
+  document.getElementById('sum-total').textContent = rec.players[0]?.total ?? 0;
 
   const table = document.getElementById('summary-table');
   table.innerHTML = `<tr><th>Spilari</th><th>Högg</th></tr>` +
-    rows.map(r=>`<tr><td>${r.name}</td><td>${r.total}</td></tr>`).join('');
+    rec.players.map(r=>`<tr><td>${r.name}</td><td>${r.total}</td></tr>`).join('');
 
+  state.viewingHistory = false;
+  updateSummaryFooter();
   showScreen('screen-summary');
 }
-function restartApp(){
-  location.reload();
+function viewRound(id){
+  const rec = SAVED_ROUNDS.find(r=>r.id===id);
+  if(!rec) return;
+  document.getElementById('sum-course-date').textContent = `${rec.course} · ${rec.date}`;
+  document.getElementById('sum-total').textContent = rec.players[0]?.total ?? 0;
+
+  const table = document.getElementById('summary-table');
+  table.innerHTML = `<tr><th>Spilari</th><th>Högg</th></tr>` +
+    rec.players.map(r=>`<tr><td>${r.name}</td><td>${r.total}</td></tr>`).join('');
+
+  state.viewingHistory = true;
+  updateSummaryFooter();
+  showScreen('screen-summary');
+}
+function updateSummaryFooter(){
+  const btn = document.getElementById('summary-restart-btn');
+  if(state.viewingHistory){
+    btn.textContent = 'Til baka á forsíðu';
+    btn.onclick = ()=>showScreen('screen-home');
+  } else {
+    btn.textContent = 'Nýr hringur';
+    btn.onclick = goToNewRound;
+  }
+}
+function goToNewRound(){
+  state.role=null; state.mateCount=0; state.mates=[]; state.course=null; state.date=null;
+  state.players=[]; state.holes=[]; state.currentNine=0; state.activeHole=1; state.roundId=null;
+  document.querySelectorAll('[data-role]').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('[data-count]').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('mate-slots').style.display='none';
+  document.getElementById('slot-container').innerHTML='';
+  renderCourses();
+  checkSetupReady();
+  showScreen('screen-setup');
+}
+
+/* ---------------- HOME SCREEN ---------------- */
+function setHomeSort(mode){
+  homeSortMode = mode;
+  document.querySelectorAll('.sort-pill').forEach(b=>b.classList.toggle('selected', b.dataset.sort===mode));
+  renderHomeList();
+}
+function renderHomeList(){
+  const wrap = document.getElementById('home-list');
+  let rounds = [...SAVED_ROUNDS];
+  if(homeSortMode==='date') rounds.sort((a,b)=> b.dateObj - a.dateObj);
+  else rounds.sort((a,b)=> a.course.localeCompare(b.course, 'is'));
+  if(rounds.length===0){
+    wrap.innerHTML = `<div class="empty-hint">Engir hringir vistaðir ennþá.</div>`;
+    return;
+  }
+  wrap.innerHTML = rounds.map(r=>`
+    <div class="round-card" onclick="viewRound(${r.id})">
+      <div class="round-card-top">
+        <span class="rc-course">${r.course}</span>
+        <span class="rc-date">${r.date}</span>
+      </div>
+      <div class="round-card-scores">
+        ${r.players.map(p=>`<span class="rc-score"><b>${p.total}</b> ${p.name}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ---------------- SETTINGS SCREEN ---------------- */
+function renderSettings(){
+  const pwrap = document.getElementById('settings-players');
+  pwrap.innerHTML = '';
+  RECENT_PLAYERS.forEach((name, i)=>{
+    const row = document.createElement('div');
+    row.className = 'settings-row';
+    row.innerHTML = `<span class="sname">${name}</span>
+      <div class="srow-btns"><button class="srow-btn" onclick="renamePlayer(${i})">Breyta</button></div>`;
+    pwrap.appendChild(row);
+  });
+
+  const cwrap = document.getElementById('settings-courses');
+  cwrap.innerHTML = '';
+  COURSES.forEach((c, i)=>{
+    const row = document.createElement('div');
+    row.className = 'settings-row';
+    row.innerHTML = `<span class="sname">${c.name}${c.favorite? ' ★':''}</span>
+      <div class="srow-btns">
+        <button class="srow-btn" onclick="renameCourse(${i})">Breyta</button>
+        <button class="srow-btn par-btn" onclick="openParEditor(${i})">Par</button>
+      </div>`;
+    cwrap.appendChild(row);
+  });
+}
+function addNewPlayer(){
+  const name = prompt('Nafn á nýjum meðspilara:');
+  if(name && name.trim()){
+    RECENT_PLAYERS.push(name.trim());
+    renderSettings();
+  }
+}
+function renamePlayer(i){
+  const name = prompt('Breyta nafni:', RECENT_PLAYERS[i]);
+  if(name && name.trim()){
+    RECENT_PLAYERS[i] = name.trim();
+    renderSettings();
+  }
+}
+function renameCourse(i){
+  const name = prompt('Breyta nafni vallar:', COURSES[i].name);
+  if(name && name.trim()){
+    COURSES[i].name = name.trim();
+    renderSettings();
+    renderCourses();
+  }
+}
+
+/* ---------------- PAR EDITOR ---------------- */
+function openParEditor(i){
+  state.parEditCourseIdx = i;
+  document.getElementById('par-modal-title').textContent = `Par — ${COURSES[i].name}`;
+  renderParGrid();
+  document.getElementById('par-modal-overlay').classList.add('active');
+}
+function closeParEditor(){
+  document.getElementById('par-modal-overlay').classList.remove('active');
+}
+function renderParGrid(){
+  const c = COURSES[state.parEditCourseIdx];
+  const front = document.getElementById('par-grid-front');
+  const back = document.getElementById('par-grid-back');
+  front.innerHTML = ''; back.innerHTML = '';
+  for(let h=0; h<18; h++){
+    const cell = document.createElement('div');
+    cell.className = 'par-cell';
+    cell.innerHTML = `<div class="par-hnum">Hola ${h+1}</div>
+      <div class="par-stepper">
+        <button onclick="changePar(${h}, -1)">−</button>
+        <span class="par-val" id="par-val-${h}">${c.pars[h]}</span>
+        <button onclick="changePar(${h}, 1)">+</button>
+      </div>`;
+    (h<9 ? front : back).appendChild(cell);
+  }
+}
+function changePar(h, delta){
+  const c = COURSES[state.parEditCourseIdx];
+  c.pars[h] = Math.max(3, Math.min(6, c.pars[h]+delta));
+  document.getElementById(`par-val-${h}`).textContent = c.pars[h];
 }
 
 /* ---------------- SCREEN SWITCH ---------------- */
@@ -658,6 +947,7 @@ function showScreen(id){
 
 /* ---------------- INIT ---------------- */
 renderCourses();
+renderHomeList();
 </script>
 </body>
 </html>

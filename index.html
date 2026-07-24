@@ -156,6 +156,7 @@
     background:var(--paper-line); color:var(--ink-soft);
   }
   .srow-btn.par-btn{ background:var(--gold); color:#3a2a06; }
+  .srow-btn.del-btn{ background:var(--flag); color:#fff; }
 
   /* ---------- Par editor ---------- */
   .par-modal{
@@ -272,15 +273,15 @@
   .player-col{
     min-width:0; min-height:0; background:#fff; border-radius:16px; padding:10px 8px 8px;
     display:flex; flex-direction:column; align-items:center; gap:6px;
-    border:2px solid var(--paper-line); overflow:hidden;
+    border:2px solid var(--paper-line); overflow:auto;
   }
   .player-col .pname{ font-size:13px; font-weight:800; color:var(--ink-soft); text-align:center; flex-shrink:0; }
-  .player-col .ptotal{ font-size:15vw; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1; flex-shrink:0; }
+  .player-col .ptotal{ font-size:min(15vw, 14vh); font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1; flex-shrink:0; }
   .player-col .ptotal.par-hit{ color:var(--green); font-weight:900; }
   .player-col .putt-count{ font-size:11px; font-weight:700; color:var(--ink-soft); flex-shrink:0; }
   .big-plus{
-    width:100%; flex:1; min-height:0; border-radius:16px; border:none; background:var(--lawn);
-    color:#fff; font-size:40px; font-weight:800; cursor:pointer; box-shadow:var(--shadow);
+    width:100%; flex:1 1 44px; min-height:44px; border-radius:16px; border:none; background:var(--lawn);
+    color:#fff; font-size:40px; font-weight:800; cursor:pointer; box-shadow:var(--shadow); flex-shrink:0;
   }
   .big-plus:active{ background:var(--lawn-bright); }
   .action-row{ display:flex; gap:6px; width:100%; flex-shrink:0; }
@@ -293,6 +294,15 @@
     width:100%; padding:6px 4px; border-radius:10px; border:2px solid var(--paper-line); background:transparent;
     color:var(--ink-soft); font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0;
   }
+  /* Þegar 3-4 spilarar deila skjánum eru reitirnir hálf-háir — allt þarf að vera þéttara */
+  .player-col.compact{ padding:8px 6px 6px; gap:4px; }
+  .player-col.compact .pname{ font-size:11px; }
+  .player-col.compact .ptotal{ font-size:min(11vw, 9vh); }
+  .player-col.compact .putt-count{ font-size:10px; }
+  .player-col.compact .big-plus{ font-size:26px; flex:1 1 40px; min-height:40px; }
+  .player-col.compact .action-row{ gap:4px; }
+  .player-col.compact .action-btn{ padding:7px 2px; font-size:11px; }
+  .player-col.compact .undo-btn{ padding:4px 2px; font-size:10px; }
 
   /* ---------- Confirm quit popup ---------- */
   .confirm-overlay{
@@ -311,17 +321,29 @@
   .cbtn-yes{ background:var(--flag); color:#fff; }
 
   /* ---------- Summary screen ---------- */
-  .summary-body{ flex:1; padding:24px 20px; overflow-y:auto; }
-  .summary-header{ text-align:center; margin-bottom:22px; }
-  .summary-header .big-total{ font-size:64px; font-weight:800; color:var(--green); line-height:1; font-variant-numeric:tabular-nums; }
-  .summary-header .lbl{ font-size:13px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink-soft); margin-top:6px; }
-  .summary-table{ width:100%; border-collapse:collapse; margin-top:10px; }
+  .summary-body{ flex:1; padding:20px 20px 24px; overflow-y:auto; }
+  .summary-totals-row{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:18px; }
+  .summary-chip{
+    background:#fff; border:2px solid var(--paper-line); border-radius:14px; padding:10px 16px; text-align:center;
+  }
+  .summary-chip .sc-total{ font-size:30px; font-weight:800; color:var(--green); font-variant-numeric:tabular-nums; line-height:1; }
+  .summary-chip .sc-name{ font-size:11px; font-weight:700; color:var(--ink-soft); margin-top:2px; }
+  .status-badge{
+    display:inline-block; font-size:11px; font-weight:800; padding:3px 8px; border-radius:8px; margin-left:6px; vertical-align:middle;
+  }
+  .status-badge.open{ background:var(--gold); color:#3a2a06; }
+  .summary-table{ width:100%; border-collapse:collapse; margin-top:4px; }
   .summary-table th{ font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft); padding:6px 4px; border-bottom:2px solid var(--paper-line); }
-  .summary-table td{ font-size:15px; font-weight:700; text-align:center; padding:8px 4px; border-bottom:1px solid var(--paper-line); font-variant-numeric:tabular-nums; }
-  .summary-table td:first-child, .summary-table th:first-child{ text-align:left; font-weight:800; color:var(--green); }
+  .summary-table td{ font-size:14px; font-weight:700; text-align:center; padding:7px 4px; border-bottom:1px solid var(--paper-line); font-variant-numeric:tabular-nums; }
+  .summary-table td:first-child, .summary-table th:first-child{ text-align:left; font-weight:800; color:var(--ink-soft); }
+  .summary-table tr.subtotal-row td{ background:var(--paper-line); font-weight:800; color:var(--green); }
+  .summary-table tr.grandtotal-row td{ background:var(--green); color:var(--paper); font-weight:800; }
+  .summary-table tr.grandtotal-row td:first-child{ color:var(--paper); }
+  .summary-table td.par-hit{ color:var(--green); font-weight:900; }
   .summary-footer{ padding:16px 20px max(16px, env(safe-area-inset-bottom)); display:flex; gap:10px; }
   .summary-footer button{ flex:1; padding:16px; border-radius:14px; border:none; font-size:15px; font-weight:800; cursor:pointer; }
-  .sbtn-new{ background:var(--green); color:var(--paper); }
+  .sbtn-new{ background:var(--lawn); color:#fff; }
+  .sbtn-home{ background:var(--paper-line); color:var(--ink); }
 </style>
 </head>
 <body>
@@ -358,11 +380,14 @@
       <h1>Stillingar</h1>
     </div>
     <div class="setup-body">
-      <div class="section-label"><span class="num">1</span> Meðspilarar</div>
+      <div class="section-label"><span class="num">1</span> Forgjöf — BA og JBA</div>
+      <div class="subtle-list" id="settings-main-players"></div>
+
+      <div class="section-label"><span class="num">2</span> Meðspilarar</div>
       <div class="subtle-list" id="settings-players"></div>
       <div class="add-new-btn" onclick="addNewPlayer()">+ Bæta við spilara</div>
 
-      <div class="section-label"><span class="num">2</span> Vellir</div>
+      <div class="section-label"><span class="num">3</span> Vellir</div>
       <div class="subtle-list" id="settings-courses"></div>
       <div class="add-new-btn" onclick="addNewCourse()">+ Bæta við velli</div>
     </div>
@@ -430,14 +455,12 @@
       <div class="date" id="sum-course-date">—</div>
     </div>
     <div class="summary-body">
-      <div class="summary-header">
-        <div class="big-total" id="sum-total">0</div>
-        <div class="lbl">Högg samtals</div>
-      </div>
+      <div class="summary-totals-row" id="summary-totals-row"></div>
       <table class="summary-table" id="summary-table"></table>
     </div>
     <div class="summary-footer">
-      <button class="sbtn-new" id="summary-restart-btn">Nýr hringur</button>
+      <button class="sbtn-new" onclick="goToNewRound()">Nýr hringur</button>
+      <button class="sbtn-home" onclick="showScreen('screen-home')">Á forsíðu</button>
     </div>
   </div>
 
@@ -558,6 +581,7 @@ let RECENT_PLAYERS = [
 let homeFilterRole = 'all';
 let SAVED_ROUNDS = []; // týnist við endurhleðslu þar til Firebase er tengt
 let homeSortMode = 'date';
+let MAIN_PLAYERS = { BA:{handicap:null}, JBA:{handicap:null} };
 
 /* ============================================================
    STATE
@@ -694,6 +718,7 @@ function confirmSetup(){
       startedAt: Date.now()
     });
   }
+  saveCurrentRound(false);
   showScreen('screen-scorecard');
   renderScorecard();
 }
@@ -755,23 +780,22 @@ function nextNine(){
   state.currentNine = 1;
   renderScorecard();
 }
-function saveCurrentRound(){
+function saveCurrentRound(finished){
+  const existingIdx = SAVED_ROUNDS.findIndex(r=>r.id===state.roundId);
+  const alreadyCounted = existingIdx>=0 && SAVED_ROUNDS[existingIdx].statsCounted;
   const rec = {
     id: state.roundId,
     role: state.role,
     course: state.course,
     date: state.date,
     dateObj: state.roundDateObj || new Date(),
-    players: state.players.map((p,pi)=>{
-      let sum=0; for(let h=0;h<18;h++) sum += state.holes[h][pi].strokes;
-      return {name:p.name, total:sum};
-    })
+    currentNine: state.currentNine,
+    isFinished: !!finished,
+    statsCounted: alreadyCounted,
+    players: state.players.map(p=>({name:p.name, role:p.role, slot:p.slot})),
+    holes: state.holes.map(h=> h.map(p=>({strokes:p.strokes, putts:p.putts})))
   };
-  const existingIdx = SAVED_ROUNDS.findIndex(r=>r.id===rec.id);
-  if(existingIdx>=0){
-    SAVED_ROUNDS[existingIdx] = rec;
-  } else {
-    SAVED_ROUNDS.unshift(rec);
+  if(finished && !alreadyCounted){
     state.mates.filter(Boolean).forEach(mateName=>{
       const player = RECENT_PLAYERS.find(p=>p.name===mateName);
       if(!player) return;
@@ -781,18 +805,27 @@ function saveCurrentRound(){
         db.ref('players/'+player.id).update({withBA:player.withBA, withJBA:player.withJBA});
       }
     });
+    rec.statsCounted = true;
   }
+  if(existingIdx>=0) SAVED_ROUNDS[existingIdx] = rec; else SAVED_ROUNDS.unshift(rec);
   if(firebaseReady){
     db.ref('rounds/'+rec.id).set({...rec, dateObj: rec.dateObj.getTime()});
-    db.ref('activeRounds/'+rec.id).remove();
+    if(finished) db.ref('activeRounds/'+rec.id).remove();
   }
   return rec;
 }
+function computeRoundTotals(rec){
+  return rec.players.map((p,pi)=>{
+    let sum = 0;
+    for(let h=0; h<18; h++) sum += (rec.holes[h] && rec.holes[h][pi] ? rec.holes[h][pi].strokes : 0);
+    return {name:p.name, total:sum};
+  });
+}
 function saveRound(){
-  saveCurrentRound();
-  alert(firebaseReady
-    ? 'Skor vistað í Firebase.'
-    : 'Skor vistað (staðbundið — Firebase er ekki tengt, athugaðu firebaseConfig).');
+  saveCurrentRound(false);
+  showConfirm('Viltu hætta hring og fara í valmynd?', ()=>{
+    finishRound();
+  });
 }
 
 /* ---------------- HOLE MODAL ---------------- */
@@ -826,7 +859,7 @@ function renderHoleModal(){
     const d = state.holes[idx][pi];
     const par = getCoursePar(idx);
     const col = document.createElement('div');
-    col.className = 'player-col';
+    col.className = 'player-col' + (n>=3 ? ' compact' : '');
     if(n===1){ col.style.gridColumn='1 / 3'; col.style.gridRow='1 / 3'; }
     else if(n===2){ col.style.gridRow='1 / 3'; col.style.gridColumn = pi===0 ? '1' : '2'; }
     else if(n===3 && pi===2){ col.style.gridColumn='1 / 3'; }
@@ -883,6 +916,7 @@ function syncActiveHole(){
   const idx = state.activeHole;
   const holeData = state.holes[idx].map(p=>({strokes:p.strokes, putts:p.putts}));
   db.ref(`activeRounds/${state.roundId}/holes/${idx}`).set(holeData);
+  saveCurrentRound(false); // heldur 'rounds/' uppfærðu svo hægt sé að halda áfram síðar, jafnvel án þess að ýta á Vista
 }
 function refreshPlayerCol(pi){
   const d = state.holes[state.activeHole][pi];
@@ -898,46 +932,75 @@ function askQuit(){ document.getElementById('quit-confirm-overlay').classList.ad
 function cancelQuit(){ document.getElementById('quit-confirm-overlay').classList.remove('active'); }
 function confirmQuit(){
   document.getElementById('quit-confirm-overlay').classList.remove('active');
-  showSummary();
+  finishRound();
+}
+function finishRound(){
+  const rec = saveCurrentRound(true);
+  renderRoundDetail(rec);
+  showScreen('screen-summary');
 }
 
-/* ---------------- SUMMARY ---------------- */
-function showSummary(){
-  const rec = saveCurrentRound();
-  document.getElementById('sum-course-date').textContent = `${rec.course} · ${rec.date}`;
-  document.getElementById('sum-total').textContent = rec.players[0]?.total ?? 0;
+/* ---------------- SUMMARY / ROUND DETAIL ---------------- */
+function renderRoundDetail(rec){
+  const totals = computeRoundTotals(rec);
+  const openBadge = rec.isFinished ? '' : `<span class="status-badge open">Í gangi</span>`;
+  document.getElementById('sum-course-date').innerHTML = `${rec.course} · ${rec.date}${openBadge}`;
 
-  const table = document.getElementById('summary-table');
-  table.innerHTML = `<tr><th>Spilari</th><th>Högg</th></tr>` +
-    rec.players.map(r=>`<tr><td>${r.name}</td><td>${r.total}</td></tr>`).join('');
+  document.getElementById('summary-totals-row').innerHTML = totals.map(t=>
+    `<div class="summary-chip"><div class="sc-total">${t.total}</div><div class="sc-name">${t.name}</div></div>`
+  ).join('');
 
-  state.viewingHistory = false;
-  updateSummaryFooter();
-  showScreen('screen-summary');
+  const par = h => {
+    const c = COURSES.find(c=>c.name===rec.course);
+    return c ? c.pars[h] : null;
+  };
+  const n = rec.players.length;
+  let rows = `<tr><th>Hola</th>${rec.players.map(p=>`<th>${shortName(p.name)}</th>`).join('')}</tr>`;
+  function holeRow(h){
+    const p = par(h);
+    return `<tr><td>${h+1}</td>` + rec.players.map((pl,pi)=>{
+      const s = rec.holes[h][pi].strokes;
+      return `<td class="${s && s===p?'par-hit':''}">${s||'–'}</td>`;
+    }).join('') + `</tr>`;
+  }
+  function subtotalRow(label, fromH, toH){
+    return `<tr class="subtotal-row"><td>${label}</td>` + rec.players.map((pl,pi)=>{
+      let sum=0; for(let h=fromH; h<=toH; h++) sum += rec.holes[h][pi].strokes;
+      return `<td>${sum}</td>`;
+    }).join('') + `</tr>`;
+  }
+  for(let h=0; h<9; h++) rows += holeRow(h);
+  rows += subtotalRow('1–9', 0, 8);
+  for(let h=9; h<18; h++) rows += holeRow(h);
+  rows += subtotalRow('10–18', 9, 17);
+  rows += `<tr class="grandtotal-row"><td>Samtals</td>` + totals.map(t=>`<td>${t.total}</td>`).join('') + `</tr>`;
+
+  document.getElementById('summary-table').innerHTML = rows;
 }
 function viewRound(id){
   const rec = SAVED_ROUNDS.find(r=>r.id===id);
   if(!rec) return;
-  document.getElementById('sum-course-date').textContent = `${rec.course} · ${rec.date}`;
-  document.getElementById('sum-total').textContent = rec.players[0]?.total ?? 0;
-
-  const table = document.getElementById('summary-table');
-  table.innerHTML = `<tr><th>Spilari</th><th>Högg</th></tr>` +
-    rec.players.map(r=>`<tr><td>${r.name}</td><td>${r.total}</td></tr>`).join('');
-
-  state.viewingHistory = true;
-  updateSummaryFooter();
-  showScreen('screen-summary');
-}
-function updateSummaryFooter(){
-  const btn = document.getElementById('summary-restart-btn');
-  if(state.viewingHistory){
-    btn.textContent = 'Til baka á forsíðu';
-    btn.onclick = ()=>showScreen('screen-home');
+  if(rec.isFinished){
+    renderRoundDetail(rec);
+    showScreen('screen-summary');
   } else {
-    btn.textContent = 'Nýr hringur';
-    btn.onclick = goToNewRound;
+    resumeRound(rec);
   }
+}
+function resumeRound(rec){
+  state.role = rec.role;
+  state.course = rec.course;
+  state.date = rec.date;
+  state.roundId = rec.id;
+  state.roundDateObj = rec.dateObj;
+  state.currentNine = rec.currentNine || 0;
+  state.activeHole = state.currentNine*9;
+  state.players = rec.players.map(p=>({name:p.name, role:p.role, slot:p.slot}));
+  state.mates = state.players.filter(p=>p.role==='mate').sort((a,b)=>a.slot-b.slot).map(p=>p.name);
+  state.mateCount = state.mates.length;
+  state.holes = rec.holes.map(h=> h.map(p=>({strokes:p.strokes, putts:p.putts, _last:[]})));
+  showScreen('screen-scorecard');
+  renderScorecard();
 }
 function goToNewRound(){
   state.role=null; state.mateCount=0; state.mates=[]; state.course=null; state.date=null;
@@ -971,17 +1034,21 @@ function renderHomeList(){
     wrap.innerHTML = `<div class="empty-hint">Engir hringir vistaðir ennþá.</div>`;
     return;
   }
-  wrap.innerHTML = rounds.map(r=>`
-    <div class="round-card" onclick="viewRound(${r.id})">
+  wrap.innerHTML = rounds.map(r=>{
+    const totals = computeRoundTotals(r);
+    const openBadge = r.isFinished ? '' : `<span class="status-badge open">Í gangi</span>`;
+    return `
+    <div class="round-card" onclick="viewRound('${r.id}')">
       <div class="round-card-top">
-        <span class="rc-course">${r.course} <span class="rc-role">${r.role}</span></span>
+        <span class="rc-course">${r.course} <span class="rc-role">${r.role}</span>${openBadge}</span>
         <span class="rc-date">${r.date}</span>
       </div>
       <div class="round-card-scores">
-        ${r.players.map(p=>`<span class="rc-score"><b>${p.total}</b> ${p.name}</span>`).join('')}
+        ${totals.map(t=>`<span class="rc-score"><b>${t.total}</b> ${t.name}</span>`).join('')}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 /* ---------------- GENERIC CONFIRM POPUP ---------------- */
@@ -1003,6 +1070,21 @@ function genericConfirmNo(){
 
 /* ---------------- SETTINGS SCREEN ---------------- */
 function renderSettings(){
+  const mwrap = document.getElementById('settings-main-players');
+  mwrap.innerHTML = '';
+  ['BA','JBA'].forEach(role=>{
+    const row = document.createElement('div');
+    row.className = 'settings-row';
+    row.innerHTML = `<div class="srow-text">
+        <span class="sname">${role}</span>
+        <span class="sstats">Forgjöf: ${MAIN_PLAYERS[role].handicap ?? '—'}</span>
+      </div>
+      <div class="srow-btns">
+        <button class="srow-btn par-btn" onclick="editMainHandicap('${role}')">Forgjöf</button>
+      </div>`;
+    mwrap.appendChild(row);
+  });
+
   const pwrap = document.getElementById('settings-players');
   pwrap.innerHTML = '';
   RECENT_PLAYERS.forEach((player, i)=>{
@@ -1015,6 +1097,7 @@ function renderSettings(){
       <div class="srow-btns">
         <button class="srow-btn" onclick="renamePlayer(${i})">Nafn</button>
         <button class="srow-btn par-btn" onclick="editHandicap(${i})">Forgjöf</button>
+        <button class="srow-btn del-btn" onclick="deletePlayer(${i})">Eyða</button>
       </div>`;
     pwrap.appendChild(row);
   });
@@ -1028,8 +1111,38 @@ function renderSettings(){
       <div class="srow-btns">
         <button class="srow-btn" onclick="renameCourse(${i})">Breyta</button>
         <button class="srow-btn par-btn" onclick="openParEditor(${i})">Par</button>
+        <button class="srow-btn del-btn" onclick="deleteCourse(${i})">Eyða</button>
       </div>`;
     cwrap.appendChild(row);
+  });
+}
+function editMainHandicap(role){
+  const current = MAIN_PLAYERS[role].handicap;
+  const val = prompt(`Forgjöf fyrir ${role}:`, current ?? '');
+  if(val===null || val.trim()==='') return;
+  const num = parseFloat(val.replace(',', '.'));
+  if(isNaN(num)) return;
+  showConfirm(`Setja forgjöf ${num} á ${role}?`, ()=>{
+    MAIN_PLAYERS[role].handicap = num;
+    renderSettings();
+    if(firebaseReady) db.ref('mainPlayers/'+role).update({handicap:num});
+  });
+}
+function deletePlayer(i){
+  const player = RECENT_PLAYERS[i];
+  showConfirm(`Eyða "${player.name}" út úr meðspilaralista?`, ()=>{
+    if(firebaseReady && player.id) db.ref('players/'+player.id).remove();
+    RECENT_PLAYERS.splice(i,1);
+    renderSettings();
+  });
+}
+function deleteCourse(i){
+  const c = COURSES[i];
+  showConfirm(`Eyða "${c.name}" út af vallalista?`, ()=>{
+    if(firebaseReady && c.id) db.ref('courses/'+c.id).remove();
+    COURSES.splice(i,1);
+    renderSettings();
+    renderCourses();
   });
 }
 function addNewPlayer(){
@@ -1121,6 +1234,18 @@ function changePar(h, delta){
 /* ---------------- FIREBASE SYNC ---------------- */
 function initFirebaseSync(){
   if(!firebaseReady) return;
+
+  // Forgjöf BA/JBA
+  db.ref('mainPlayers').once('value').then(snap=>{
+    const val = snap.val();
+    if(val){
+      if(val.BA) MAIN_PLAYERS.BA = val.BA;
+      if(val.JBA) MAIN_PLAYERS.JBA = val.JBA;
+    } else {
+      db.ref('mainPlayers').set(MAIN_PLAYERS);
+    }
+    if(document.getElementById('screen-settings').classList.contains('active')) renderSettings();
+  }).catch(e=>console.error('Villa við að sækja forgjöf BA/JBA úr Firebase', e));
 
   // Vellir — sækja einu sinni; ef tómt, senda upp sjálfgefna lista
   db.ref('courses').once('value').then(snap=>{

@@ -150,6 +150,11 @@
   .settings-row .sname{ font-size:14px; font-weight:700; color:var(--ink); }
   .srow-text{ display:flex; flex-direction:column; gap:3px; min-width:0; }
   .sstats{ font-size:11px; font-weight:600; color:var(--ink-soft); }
+  .mate-stats-row{
+    display:flex; justify-content:space-between; padding:8px 2px; border-bottom:1px solid var(--paper-line);
+    font-size:14px; font-weight:700; color:var(--ink);
+  }
+  .mate-stats-row:last-child{ border-bottom:none; }
   .settings-row .srow-btns{ display:flex; gap:6px; flex-shrink:0; }
   .srow-btn{
     border:none; border-radius:8px; padding:7px 10px; font-size:12px; font-weight:800; cursor:pointer;
@@ -500,6 +505,17 @@
   </div>
 </div>
 
+<!-- ========== MATE STATS POPUP ========== -->
+<div class="confirm-overlay" id="mate-stats-overlay">
+  <div class="confirm-box" style="text-align:left;">
+    <p id="mate-stats-title" style="text-align:center;">Spilað með</p>
+    <div id="mate-stats-list" style="margin-bottom:18px;"></div>
+    <div class="confirm-btns">
+      <button class="cbtn-no" style="flex:1;" onclick="closeMateStats()">Loka</button>
+    </div>
+  </div>
+</div>
+
 <!-- ========== GENERIC CONFIRM POPUP (settings changes) ========== -->
 <div class="confirm-overlay" id="generic-confirm-overlay">
   <div class="confirm-box">
@@ -581,7 +597,7 @@ let RECENT_PLAYERS = [
 let homeFilterRole = 'all';
 let SAVED_ROUNDS = []; // týnist við endurhleðslu þar til Firebase er tengt
 let homeSortMode = 'date';
-let MAIN_PLAYERS = { BA:{handicap:null}, JBA:{handicap:null} };
+let MAIN_PLAYERS = { BA:{handicap:null, withJBA:0}, JBA:{handicap:null, withBA:0} };
 
 /* ============================================================
    STATE
@@ -604,6 +620,8 @@ let state = {
 function selectRole(role){
   state.role = role;
   document.querySelectorAll('[data-role]').forEach(b=>b.classList.toggle('selected', b.dataset.role===role));
+  state.mates = state.mates.map(m=> m===role ? null : m);
+  refreshMateLists();
   checkSetupReady();
 }
 function selectCount(n){
@@ -628,12 +646,15 @@ function renderMateSlots(){
   refreshMateLists();
 }
 function refreshMateLists(){
+  const otherMain = state.role==='BA' ? 'JBA' : (state.role==='JBA' ? 'BA' : null);
+  const options = [];
+  if(otherMain) options.push(otherMain);
+  RECENT_PLAYERS.forEach(p=>options.push(p.name));
   for(let i=0;i<state.mateCount;i++){
     const list = document.getElementById(`mate-list-${i}`);
     if(!list) continue;
     list.innerHTML = '';
-    RECENT_PLAYERS.forEach(player=>{
-      const name = player.name;
+    options.forEach(name=>{
       const takenElsewhere = state.mates.some((m, mi)=> mi!==i && m===name);
       const chip = document.createElement('div');
       chip.className = 'subtle-chip mate-chip'
@@ -797,6 +818,16 @@ function saveCurrentRound(finished){
   };
   if(finished && !alreadyCounted){
     state.mates.filter(Boolean).forEach(mateName=>{
+      if(mateName==='BA' || mateName==='JBA'){
+        if(state.role==='BA' && mateName==='JBA'){
+          MAIN_PLAYERS.BA.withJBA++;
+          if(firebaseReady) db.ref('mainPlayers/BA').update({withJBA:MAIN_PLAYERS.BA.withJBA});
+        } else if(state.role==='JBA' && mateName==='BA'){
+          MAIN_PLAYERS.JBA.withBA++;
+          if(firebaseReady) db.ref('mainPlayers/JBA').update({withBA:MAIN_PLAYERS.JBA.withBA});
+        }
+        return;
+      }
       const player = RECENT_PLAYERS.find(p=>p.name===mateName);
       if(!player) return;
       if(state.role==='BA') player.withBA++;
@@ -823,7 +854,7 @@ function computeRoundTotals(rec){
 }
 function saveRound(){
   saveCurrentRound(false);
-  showConfirm('Viltu hætta hring og fara í valmynd?', ()=>{
+  showConfirm('Viltu vista hring og fara á upphafsmynd?', ()=>{
     finishRound();
   });
 }
@@ -1069,17 +1100,42 @@ function genericConfirmNo(){
 }
 
 /* ---------------- SETTINGS SCREEN ---------------- */
+function topMatesFor(role){
+  const list = [];
+  RECENT_PLAYERS.forEach(p=>{
+    const count = role==='BA' ? p.withBA : p.withJBA;
+    if(count>0) list.push({name:p.name, count});
+  });
+  const otherCount = role==='BA' ? MAIN_PLAYERS.BA.withJBA : MAIN_PLAYERS.JBA.withBA;
+  if(otherCount>0) list.push({name: role==='BA'?'JBA':'BA', count:otherCount});
+  list.sort((a,b)=> b.count-a.count);
+  return list;
+}
+function openMateStats(role){
+  document.getElementById('mate-stats-title').textContent = `Spilað með ${role}`;
+  const list = topMatesFor(role);
+  document.getElementById('mate-stats-list').innerHTML = list.length===0
+    ? `<div style="text-align:center;color:var(--ink-soft);font-size:13px;padding:6px 0;">Engir leikir skráðir ennþá.</div>`
+    : list.map(x=>`<div class="mate-stats-row"><span>${x.name}</span><span>${x.count} leiki</span></div>`).join('');
+  document.getElementById('mate-stats-overlay').classList.add('active');
+}
+function closeMateStats(){
+  document.getElementById('mate-stats-overlay').classList.remove('active');
+}
 function renderSettings(){
   const mwrap = document.getElementById('settings-main-players');
   mwrap.innerHTML = '';
   ['BA','JBA'].forEach(role=>{
+    const top = topMatesFor(role).slice(0,2);
+    const topText = top.length ? top.map(t=>`${t.name} (${t.count})`).join(' · ') : '—';
     const row = document.createElement('div');
     row.className = 'settings-row';
     row.innerHTML = `<div class="srow-text">
         <span class="sname">${role}</span>
-        <span class="sstats">Forgjöf: ${MAIN_PLAYERS[role].handicap ?? '—'}</span>
+        <span class="sstats">Forgjöf: ${MAIN_PLAYERS[role].handicap ?? '—'} · Mest með: ${topText}</span>
       </div>
       <div class="srow-btns">
+        <button class="srow-btn" onclick="openMateStats('${role}')">Sjá alla</button>
         <button class="srow-btn par-btn" onclick="editMainHandicap('${role}')">Forgjöf</button>
       </div>`;
     mwrap.appendChild(row);
@@ -1284,7 +1340,11 @@ function initFirebaseSync(){
     SAVED_ROUNDS = val ? Object.keys(val).map(key=>({...val[key], id:key})) : [];
     SAVED_ROUNDS.forEach(r=>{ r.dateObj = new Date(r.dateObj); });
     renderHomeList();
-  }, e=>console.error('Villa við að sækja hringjasögu úr Firebase', e));
+  }, e=>{
+    console.error('Villa við að sækja hringjasögu úr Firebase', e);
+    document.getElementById('home-list').innerHTML =
+      `<div class="empty-hint" style="color:var(--flag);">Villa við að tengjast Firebase (${e.code||e.message}).<br>Athugaðu Rules-flipann í Realtime Database.</div>`;
+  });
 }
 
 /* ---------------- SCREEN SWITCH ---------------- */

@@ -207,12 +207,14 @@
   .hole-cell .hscore{ font-size:38px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
   .hole-cell .hdash{ font-size:30px; font-weight:300; color:#C9C1A8; }
   .hole-cell.done{ background:#fff; }
-  .hole-cell.done .hscore{ color:var(--green); }
+  .hole-cell.done .hscore{ color:var(--ink); }
+  .hole-cell.done .hscore.par-hit{ color:var(--green); font-weight:900; }
   .hole-cell:active{ background:var(--paper-line); }
   .hole-mini{ display:flex; flex-direction:column; gap:3px; width:100%; padding:0 12px; margin-top:8px; }
   .hole-mini .mini-row{ display:flex; justify-content:space-between; width:100%; font-size:12px; font-weight:700; color:var(--ink-soft); }
   .hole-mini .mini-row .mini-val{ color:#B9B29A; font-variant-numeric:tabular-nums; }
-  .hole-cell.done .hole-mini .mini-row .mini-val{ color:var(--green); }
+  .hole-cell.done .hole-mini .mini-row .mini-val{ color:var(--ink); }
+  .hole-cell.done .hole-mini .mini-row .mini-val.par-hit{ color:var(--green); font-weight:900; }
 
   .totals-bar{ display:grid; background:var(--green); color:var(--paper); flex-shrink:0; }
   .totals-bar .tcell{
@@ -273,7 +275,8 @@
     border:2px solid var(--paper-line); overflow:hidden;
   }
   .player-col .pname{ font-size:13px; font-weight:800; color:var(--ink-soft); text-align:center; flex-shrink:0; }
-  .player-col .ptotal{ font-size:15vw; font-weight:800; color:var(--green); font-variant-numeric:tabular-nums; line-height:1; flex-shrink:0; }
+  .player-col .ptotal{ font-size:15vw; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1; flex-shrink:0; }
+  .player-col .ptotal.par-hit{ color:var(--green); font-weight:900; }
   .player-col .putt-count{ font-size:11px; font-weight:700; color:var(--ink-soft); flex-shrink:0; }
   .big-plus{
     width:100%; flex:1; min-height:0; border-radius:16px; border:none; background:var(--lawn);
@@ -496,9 +499,43 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
 <script>
 /* ============================================================
-   MOCK GAGNASETT — skiptist út fyrir Firebase í næstu umferð
+   FIREBASE — verkefnið "BroGolfB65"
+   Settu inn þitt eigið firebaseConfig hér að neðan.
+   Finnst í: Firebase Console → Project settings (gírinn) →
+   General flipi → "Your apps" → </> vefforrit → SDK setup and configuration
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBP0yg268JEKP0SLiEgIArNmHhXn4CjJks",
+  authDomain: "brogolfb65.firebaseapp.com",
+  databaseURL: "PASTE_DATABASE_URL_HÉR", // sjá athugasemd að neðan — vantar enn
+  projectId: "brogolfb65",
+  storageBucket: "brogolfb65.firebasestorage.app",
+  messagingSenderId: "416461681320",
+  appId: "1:416461681320:web:ceb9fa17c05cf0acac889d"
+};
+let db = null;
+let firebaseReady = false;
+if(firebaseConfig.databaseURL.startsWith('PASTE_')){
+  console.warn('Firebase databaseURL vantar enn — appið keyrir í staðbundnum ham þar til það er sett inn.');
+} else {
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    firebaseReady = true;
+  }catch(e){
+    console.error('Firebase tenging mistókst — appið keyrir í staðbundnum ham.', e);
+  }
+}
+</script>
+
+<script>
+/* ============================================================
+   SJÁLFGEFIN GÖGN — notuð í fyrsta skipti sem appið keyrir og
+   Firebase er tómt (þá er þessu ýtt upp sjálfkrafa)
    ============================================================ */
 let COURSES = [
   {name:"Kiðjaberg", favorite:true, pars:Array(18).fill(4)},
@@ -622,7 +659,13 @@ function addNewCourse(){
   const name = prompt('Nafn á nýjum velli:');
   if(!name || !name.trim()) return;
   showConfirm(`Bæta við "${name.trim()}" sem velli?`, ()=>{
-    COURSES.unshift({name:name.trim(), favorite:false, pars:Array(18).fill(4)});
+    const newCourse = {name:name.trim(), favorite:false, pars:Array(18).fill(4)};
+    if(firebaseReady){
+      const ref = db.ref('courses').push();
+      newCourse.id = ref.key;
+      ref.set({name:newCourse.name, favorite:newCourse.favorite, pars:newCourse.pars});
+    }
+    COURSES.unshift(newCourse);
     renderCourses();
     if(document.getElementById('screen-settings').classList.contains('active')) renderSettings();
   });
@@ -639,9 +682,18 @@ function confirmSetup(){
   state.mates.forEach((m,i)=> state.players.push({name:m, role:'mate', slot:i}));
   state.holes = new Array(18).fill(null).map(()=> state.players.map(()=>({strokes:0, putts:0})));
   state.date = new Date().toLocaleDateString('is-IS', {day:'numeric', month:'long', year:'numeric'});
-  state.roundId = Date.now();
+  state.roundId = firebaseReady ? db.ref('rounds').push().key : 'local-' + Date.now();
   state.roundDateObj = new Date();
   state.currentNine = 0;
+  if(firebaseReady){
+    db.ref('activeRounds/'+state.roundId).set({
+      role: state.role,
+      course: state.course,
+      date: state.date,
+      players: state.players.map(p=>p.name),
+      startedAt: Date.now()
+    });
+  }
   showScreen('screen-scorecard');
   renderScorecard();
 }
@@ -665,11 +717,12 @@ function renderScorecard(){
     const cell = document.createElement('div');
     cell.className = 'hole-cell' + (done?' done':'');
     let inner = `<span class="hnum">${offset+i}</span>`;
+    const par = getCoursePar(holeIdx);
     if(state.players.length===1){
-      inner += done ? `<span class="hscore">${holeData[0].strokes}</span>` : `<span class="hdash">–</span>`;
+      inner += done ? `<span class="hscore${holeData[0].strokes===par?' par-hit':''}">${holeData[0].strokes}</span>` : `<span class="hdash">–</span>`;
     } else if(done){
       inner += `<div class="hole-mini">` + state.players.map((p,pi)=>
-        `<div class="mini-row"><span>${shortName(p.name)}</span><span class="mini-val">${holeData[pi].strokes||'–'}</span></div>`
+        `<div class="mini-row"><span>${shortName(p.name)}</span><span class="mini-val${holeData[pi].strokes && holeData[pi].strokes===par?' par-hit':''}">${holeData[pi].strokes||'–'}</span></div>`
       ).join('') + `</div>`;
     } else {
       inner += `<span class="hdash">–</span>`;
@@ -684,6 +737,10 @@ function renderScorecard(){
 function shortName(name){
   if(!name) return '—';
   return name.length>7 ? name.slice(0,6)+'.' : name;
+}
+function getCoursePar(holeIdx){
+  const c = COURSES.find(c=>c.name===state.course);
+  return c ? c.pars[holeIdx] : null;
 }
 function renderTotalsBar(){
   const bar = document.getElementById('totals-bar');
@@ -720,13 +777,22 @@ function saveCurrentRound(){
       if(!player) return;
       if(state.role==='BA') player.withBA++;
       else if(state.role==='JBA') player.withJBA++;
+      if(firebaseReady && player.id){
+        db.ref('players/'+player.id).update({withBA:player.withBA, withJBA:player.withJBA});
+      }
     });
+  }
+  if(firebaseReady){
+    db.ref('rounds/'+rec.id).set({...rec, dateObj: rec.dateObj.getTime()});
+    db.ref('activeRounds/'+rec.id).remove();
   }
   return rec;
 }
 function saveRound(){
   saveCurrentRound();
-  alert('Skor vistað (staðbundið í bili — Firebase-tenging kemur í næstu umferð).');
+  alert(firebaseReady
+    ? 'Skor vistað í Firebase.'
+    : 'Skor vistað (staðbundið — Firebase er ekki tengt, athugaðu firebaseConfig).');
 }
 
 /* ---------------- HOLE MODAL ---------------- */
@@ -758,6 +824,7 @@ function renderHoleModal(){
   const n = state.players.length;
   state.players.forEach((p, pi)=>{
     const d = state.holes[idx][pi];
+    const par = getCoursePar(idx);
     const col = document.createElement('div');
     col.className = 'player-col';
     if(n===1){ col.style.gridColumn='1 / 3'; col.style.gridRow='1 / 3'; }
@@ -765,7 +832,7 @@ function renderHoleModal(){
     else if(n===3 && pi===2){ col.style.gridColumn='1 / 3'; }
     col.innerHTML = `
       <div class="pname">${p.name||p.label}</div>
-      <div class="ptotal" id="total-${pi}">${d.strokes}</div>
+      <div class="ptotal${d.strokes===par?' par-hit':''}" id="total-${pi}">${d.strokes}</div>
       <div class="putt-count" id="putts-${pi}">${d.putts} pútt</div>
       <button class="big-plus" onclick="addStroke(${pi})">+</button>
       <div class="action-row">
@@ -783,6 +850,7 @@ function addStroke(pi){
   d._last = d._last || [];
   d._last.push('stroke');
   refreshPlayerCol(pi);
+  syncActiveHole();
 }
 function addPutt(pi){
   const d = state.holes[state.activeHole][pi];
@@ -790,6 +858,7 @@ function addPutt(pi){
   d._last = d._last || [];
   d._last.push('putt');
   refreshPlayerCol(pi);
+  syncActiveHole();
 }
 function addPenalty(pi){
   const d = state.holes[state.activeHole][pi];
@@ -797,6 +866,7 @@ function addPenalty(pi){
   d._last = d._last || [];
   d._last.push('penalty1');
   refreshPlayerCol(pi);
+  syncActiveHole();
 }
 function undoStroke(pi){
   const d = state.holes[state.activeHole][pi];
@@ -806,10 +876,20 @@ function undoStroke(pi){
   if(last==='putt'){ d.strokes = Math.max(0, d.strokes-1); d.putts = Math.max(0,d.putts-1); }
   if(last==='penalty1') d.strokes = Math.max(0, d.strokes-1);
   refreshPlayerCol(pi);
+  syncActiveHole();
+}
+function syncActiveHole(){
+  if(!firebaseReady || !state.roundId) return;
+  const idx = state.activeHole;
+  const holeData = state.holes[idx].map(p=>({strokes:p.strokes, putts:p.putts}));
+  db.ref(`activeRounds/${state.roundId}/holes/${idx}`).set(holeData);
 }
 function refreshPlayerCol(pi){
   const d = state.holes[state.activeHole][pi];
-  document.getElementById(`total-${pi}`).textContent = d.strokes;
+  const par = getCoursePar(state.activeHole);
+  const totalEl = document.getElementById(`total-${pi}`);
+  totalEl.textContent = d.strokes;
+  totalEl.classList.toggle('par-hit', d.strokes===par);
   document.getElementById(`putts-${pi}`).textContent = `${d.putts} pútt`;
 }
 
@@ -956,7 +1036,13 @@ function addNewPlayer(){
   const name = prompt('Nafn á nýjum meðspilara:');
   if(!name || !name.trim()) return;
   showConfirm(`Bæta við "${name.trim()}" sem meðspilara?`, ()=>{
-    RECENT_PLAYERS.push({name:name.trim(), handicap:null, withBA:0, withJBA:0});
+    const newPlayer = {name:name.trim(), handicap:null, withBA:0, withJBA:0};
+    if(firebaseReady){
+      const ref = db.ref('players').push();
+      newPlayer.id = ref.key;
+      ref.set({name:newPlayer.name, handicap:newPlayer.handicap, withBA:0, withJBA:0});
+    }
+    RECENT_PLAYERS.push(newPlayer);
     renderSettings();
   });
 }
@@ -966,6 +1052,7 @@ function renamePlayer(i){
   showConfirm(`Breyta nafni í "${name.trim()}"?`, ()=>{
     RECENT_PLAYERS[i].name = name.trim();
     renderSettings();
+    if(firebaseReady && RECENT_PLAYERS[i].id) db.ref('players/'+RECENT_PLAYERS[i].id).update({name:RECENT_PLAYERS[i].name});
   });
 }
 function editHandicap(i){
@@ -977,6 +1064,7 @@ function editHandicap(i){
   showConfirm(`Setja forgjöf ${num} á ${RECENT_PLAYERS[i].name}?`, ()=>{
     RECENT_PLAYERS[i].handicap = num;
     renderSettings();
+    if(firebaseReady && RECENT_PLAYERS[i].id) db.ref('players/'+RECENT_PLAYERS[i].id).update({handicap:num});
   });
 }
 function renameCourse(i){
@@ -986,6 +1074,7 @@ function renameCourse(i){
     COURSES[i].name = name.trim();
     renderSettings();
     renderCourses();
+    if(firebaseReady && COURSES[i].id) db.ref('courses/'+COURSES[i].id).update({name:COURSES[i].name});
   });
 }
 
@@ -1001,6 +1090,8 @@ function closeParEditor(){
 }
 function saveAndCloseParEditor(){
   showConfirm('Vista breytingar á pari fyrir þennan völl?', ()=>{
+    const c = COURSES[state.parEditCourseIdx];
+    if(firebaseReady && c.id) db.ref('courses/'+c.id).update({pars:c.pars});
     closeParEditor();
   });
 }
@@ -1027,6 +1118,50 @@ function changePar(h, delta){
   document.getElementById(`par-val-${h}`).textContent = c.pars[h];
 }
 
+/* ---------------- FIREBASE SYNC ---------------- */
+function initFirebaseSync(){
+  if(!firebaseReady) return;
+
+  // Vellir — sækja einu sinni; ef tómt, senda upp sjálfgefna lista
+  db.ref('courses').once('value').then(snap=>{
+    const val = snap.val();
+    if(val){
+      COURSES = Object.keys(val).map(key=>({id:key, ...val[key]}));
+    } else {
+      COURSES.forEach(c=>{
+        const ref = db.ref('courses').push();
+        c.id = ref.key;
+        ref.set({name:c.name, favorite:c.favorite, pars:c.pars});
+      });
+    }
+    renderCourses();
+    if(document.getElementById('screen-settings').classList.contains('active')) renderSettings();
+  }).catch(e=>console.error('Villa við að sækja velli úr Firebase', e));
+
+  // Spilarar — sækja einu sinni; ef tómt, senda upp sjálfgefna lista
+  db.ref('players').once('value').then(snap=>{
+    const val = snap.val();
+    if(val){
+      RECENT_PLAYERS = Object.keys(val).map(key=>({id:key, ...val[key]}));
+    } else {
+      RECENT_PLAYERS.forEach(p=>{
+        const ref = db.ref('players').push();
+        p.id = ref.key;
+        ref.set({name:p.name, handicap:p.handicap, withBA:p.withBA, withJBA:p.withJBA});
+      });
+    }
+    if(document.getElementById('screen-settings').classList.contains('active')) renderSettings();
+  }).catch(e=>console.error('Villa við að sækja spilara úr Firebase', e));
+
+  // Hringjasaga — rauntíma hlustun, uppfærist sjálfkrafa á öllum tækjum
+  db.ref('rounds').on('value', snap=>{
+    const val = snap.val();
+    SAVED_ROUNDS = val ? Object.keys(val).map(key=>({...val[key], id:key})) : [];
+    SAVED_ROUNDS.forEach(r=>{ r.dateObj = new Date(r.dateObj); });
+    renderHomeList();
+  }, e=>console.error('Villa við að sækja hringjasögu úr Firebase', e));
+}
+
 /* ---------------- SCREEN SWITCH ---------------- */
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -1036,6 +1171,7 @@ function showScreen(id){
 /* ---------------- INIT ---------------- */
 renderCourses();
 renderHomeList();
+initFirebaseSync();
 </script>
 </body>
 </html>

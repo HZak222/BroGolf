@@ -702,7 +702,7 @@ function checkSetupReady(){
   document.getElementById('confirm-setup-btn').disabled = !ready;
 }
 function confirmSetup(){
-  state.players = [{name: state.role, role:'main'}];
+  state.players = [{name: state.role, role:'main', slot:null}];
   state.mates.forEach((m,i)=> state.players.push({name:m, role:'mate', slot:i}));
   state.holes = new Array(18).fill(null).map(()=> state.players.map(()=>({strokes:0, putts:0})));
   state.date = new Date().toLocaleDateString('is-IS', {day:'numeric', month:'long', year:'numeric'});
